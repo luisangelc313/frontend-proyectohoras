@@ -98,20 +98,13 @@ const BarSesion = ({ toggleTheme }) => {
     dispatch({
       type: "SALIR_SESION",
       nuevoUsuario: null,
+      usuario: null,
       autenticado: false
     })
 
     navigate('/auth/login', { raplace: true });
   };
 
-  /* 
-  const toggleTheme = () => {
-      const newThemeMode = theme.palette.mode === 'light' ? 'dark' : 'light';
-      localStorage.setItem('theme', newThemeMode);
-      setTheme(getTheme());
-      setDarkMode(!darkMode);
-  };
-  */
 
   const handleToggleTheme = () => {
     console.log("handleToggleTheme called");
@@ -124,19 +117,10 @@ const BarSesion = ({ toggleTheme }) => {
     }
   };
 
-  //const [theme, setTheme] = useState(getTheme());
-
-  // Sincroniza darkMode con localStorage y el tema global
   useEffect(() => {
-    // if (darkMode) {
-    //   localStorage.setItem('theme', 'dark');
-    // } else {
-    //   localStorage.setItem('theme', 'light');
-    // }
     const storedTheme = localStorage.getItem("theme");
     setDarkMode(storedTheme === "dark");
-  }, [/*darkMode*/]);
-
+  }, []);
 
   return (
     <React.Fragment>
@@ -173,10 +157,9 @@ const BarSesion = ({ toggleTheme }) => {
       </Drawer>
 
       <Toolbar sx={{ marginTop: 0 }}>
-        {sesionUsuario.menuVisible &&
-          <IconButton color="inherit" onClick={abrirMenuIzquierdaAction}>
-            <i className="material-icons">menu</i>
-          </IconButton>}
+        <IconButton color="inherit" onClick={abrirMenuIzquierdaAction}>
+          <i className="material-icons">menu</i>
+        </IconButton>
 
         <Typography variant="h6" noWrap>
           B2B Servicios

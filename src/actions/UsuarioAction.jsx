@@ -128,12 +128,12 @@ export const obtenerUsuarioActual = (dispatch) => {
           response.data.imagenPerfil = nuevoFile;
         }
 
-        if (response.data.primerAcceso && !response.data.fechaPrimerAcceso) {
-          dispatch({
-            type: "SET_MENU_VISIBILITY",
-            payload: false, // Oculta el menú
-          });
-        }
+        // if (response.data.primerAcceso && !response.data.fechaPrimerAcceso) {
+        //   dispatch({
+        //     type: "SET_MENU_VISIBILITY",
+        //     payload: false, // Oculta el menú
+        //   });
+        // }
 
         const nuevoToken = response.data.token;
 

@@ -33,7 +33,6 @@ const useStyles = makeStyles({
 export const MenuIzquierda = ({ clases }) => {
   const [permissions, setPermissions] = useState({}); // Estado para almacenar los permisos
   //const location = useLocation(); // Hook para detectar cambios de ruta
-  const isMenuVisible = true; // Cambia esto según tu lógica de visibilidad del menú
 
   const [open, setOpen] = useState(false);
   const handleCatalogosClick = (event) => {
@@ -59,7 +58,7 @@ export const MenuIzquierda = ({ clases }) => {
   }, [/*location*/]);
 
   return (
-    <div className={clases.list} inert={!isMenuVisible ? "true" : undefined}>
+    <div className={clases.list}>
       <List>
         {permissions.inicio && (
           <ListItem component={Link} button="true" to="/">

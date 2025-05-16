@@ -1,6 +1,5 @@
 export const initialState = {
     user: null,
-    menuVisible: true,
     openSnackbar: {
         open: false,
         mensaje: "",

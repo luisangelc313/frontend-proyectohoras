@@ -25,7 +25,7 @@ import { CambiarPwd } from "./components/seguridad";
 
 function App() {
   const [theme, setTheme] = useState(getTheme());
-  const [{ openSnackbar, sesionUsuario }, dispatch] = useStateValue();
+  const [{ openSnackbar }, dispatch] = useStateValue();
   const [iniciaApp, setIniciaApp] = useState(false);
 
   // const toggleTheme = useCallback(() => {
@@ -33,6 +33,7 @@ function App() {
   //   localStorage.setItem("theme", newThemeMode);
   //   setTheme(getTheme());
   // }, [theme]);
+
   const toggleTheme = useCallback(() => {
     const newThemeMode = theme.palette.mode === "light" ? "dark" : "light";
     localStorage.setItem("theme", newThemeMode);
@@ -41,26 +42,15 @@ function App() {
   }, [theme]);
 
 
-  // Condición para mostrar u ocultar AppNavbar
-  const shouldShowNavbar = !(
-    sesionUsuario?.usuario &&
-    sesionUsuario.usuario.primerAcceso &&
-    !sesionUsuario.usuario.fechaPrimerAcceso
-  );
-
-
   useEffect(() => {
     if (!iniciaApp) {
       obtenerUsuarioActual(dispatch)
-        .then((/*response*/) => {
-          setIniciaApp(true);
-        })
-        .catch((/*error*/) => {
-          ///console.error(error)
-          setIniciaApp(true);
-        });
+        .then(() => setIniciaApp(true))
+        .catch(() => setIniciaApp(true));
+    } else {
+      setIniciaApp(true);
     }
-    //setTheme(getTheme());
+
   }, [dispatch, iniciaApp]);
 
 
@@ -121,7 +111,8 @@ function App() {
             </Box> */}
           <ThemeProvider theme={theme}>
             <CssBaseline />
-            {shouldShowNavbar && <AppNavbar toggleTheme={toggleTheme} />}
+            {/* {shouldShowNavbar && <AppNavbar toggleTheme={toggleTheme} />} */}
+            <AppNavbar toggleTheme={toggleTheme} />
             {/* <AppNavbar toggleTheme={(...args) => {
                 console.log("toggleTheme called in App.jsx with args:", args);
                 toggleTheme(...args);

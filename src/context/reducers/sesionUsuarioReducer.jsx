@@ -6,7 +6,6 @@ export const initialState = {
     foto: "",
   },
   autenticado: false,
-  menuVisible: true,
 };
 
 const sesionUsuarioReducer = (state = initialState, action) => {
@@ -20,8 +19,8 @@ const sesionUsuarioReducer = (state = initialState, action) => {
     case "SALIR_SESION":
       return {
         ...state,
-        usuario: action.nuevoUsuario,
-        autenticado: action.autenticado,
+        usuario: null,
+        autenticado: false
       };
     case "ACTUALIZAR_USUARIO":
       return {
@@ -33,11 +32,6 @@ const sesionUsuarioReducer = (state = initialState, action) => {
       return {
         ...state,
         user: action.payload,
-      };
-    case "SET_MENU_VISIBILITY":
-      return {
-        ...state,
-        menuVisible: action.payload,
       };
     default:
       return state;

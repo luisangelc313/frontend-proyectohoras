@@ -14,7 +14,7 @@ import VpnKeyIcon from '@mui/icons-material/VpnKey';
 
 import style from "../Tool/style";
 import { useStateValue } from "../../context/store";
-import { actualizarPwd } from "../../actions/UsuarioAction";
+import { actualizarPwd, obtenerUsuarioActual } from "../../actions/UsuarioAction";
 
 
 const CambiarPwd = () => {
@@ -48,6 +48,15 @@ const CambiarPwd = () => {
             (e.target.value === usuarioCredenciales.passwordNuevo || e.target.value === usuarioCredenciales.passwordNuevoConfirmar)
             && e.target.value !== ""
         );
+
+        // Si la contraseña actual tiene valor y es diferente a las otras, borra el error
+        if (
+            e.target.value &&
+            e.target.value !== usuarioCredenciales.passwordNuevo &&
+            e.target.value !== usuarioCredenciales.passwordNuevoConfirmar
+        ) {
+            setErrorPasswordActual(false);
+        }
     };
 
     const handlePasswordChange = e => {
@@ -127,7 +136,28 @@ const CambiarPwd = () => {
                     },
                 });
 
-                navigate('/', { raplace: true });
+                //Obtenemos el token de la respuesta (usuario actual) no me evite la vuelta al servidor porque se actualizan datos.
+                obtenerUsuarioActual(dispatch)
+                    .then(() => navigate('/', { raplace: true }))
+                    .catch(() => {
+                        dispatch({
+                            type: "OPEN_SNACKBAR",
+                            openMensaje: {
+                                open: true,
+                                mensaje: "Ocurró un error al obtener la información de usuario.",
+                                severity: "error",
+                                vertical: "bottom",
+                                horizontal: "left"
+                            },
+                        });
+                    });
+
+                // dispatch({
+                //     type: "INICIAR_SESION",
+                //     sesion: sesionUsuario.usuario,
+                //     autenticado: sesionUsuario.autenticado,
+                // });
+                // navigate('/', { raplace: true })
 
             } else {
                 dispatch({

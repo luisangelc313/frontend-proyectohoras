@@ -13,7 +13,6 @@ import {
 
 import BirthdayList from './BirthdayList';
 import { useStateValue } from "../../context/store";
-import { obtenerUsuarioActual } from "./../../actions/UsuarioAction";
 
 dayjs.locale('es'); // Configurar el idioma español
 
@@ -37,25 +36,25 @@ const Home = () => {
 
     const usuario = sesionUsuario.usuario;
 
-    obtenerUsuarioActual(dispatch)
-      .then((/*response*/) => {
-        setLoading(false);
-      })
-      .catch((/*error*/) => {
-        ///console.error(error)
-        setLoading(false);
-      });
+    // Solo intenta obtener usuario si hay token y usuario autenticado
+    // const token = localStorage.getItem("token_seguridad");
+    // if (token && sesionUsuario.autenticado) {
+    //   console.log("Token de seguridad:");
+    //   obtenerUsuarioActual(dispatch)
+    //     .then(() => setLoading(false))
+    //     .catch(() => setLoading(false));
+    // } else {
+    //   setLoading(false);
+    // }
 
-    if (usuario.primerAcceso && !usuario.fechaPrimerAcceso) {
+    if (usuario && usuario.primerAcceso && !usuario.fechaPrimerAcceso) {
       localStorage.removeItem("token_seguridad");
-
       dispatch({
         type: "SALIR_SESION",
         nuevoUsuario: null,
         autenticado: false
-      })
-
-      navigate('/auth/login', { raplace: true });
+      });
+      navigate('/auth/login', { replace: true });
     }
 
     if (usuario.cumpleanios && usuario.cumpleanios.length > 0) {
@@ -69,10 +68,7 @@ const Home = () => {
           vertical: "bottom",
           horizontal: "right"
         }
-
-        //if (usuario.cumpleanios.length > 0) {}
       });
-      //console.info("sesionUsuario.usuario:", sesionUsuario.usuario);
     }
 
     //Decodificar el token JWT
