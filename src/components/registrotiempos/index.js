@@ -1,7 +1,7 @@
-import ListadoRegistro from "./ListadoRegistro";
+import TaskLog from "./TaskLog";
 import DetalleRegistro from "./DetalleRegistro";
 
 export {
-    ListadoRegistro,
+    TaskLog,
     DetalleRegistro,
  };

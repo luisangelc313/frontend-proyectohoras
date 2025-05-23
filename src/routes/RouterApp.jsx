@@ -14,7 +14,7 @@ import { ListadoActividades } from "../components/catactividades";
 import { ListadoClientes } from "../components/catclientes";
 import { ListadoSoluciones } from "../components/catsoluciones";
 import { ListadoPerfiles } from "../components/catperfiles";
-import { ListadoRegistro } from "../components/registrotiempos";
+import { TaskLog } from "../components/registrotiempos";
 
 const RouterApp = () => {
   return (
@@ -36,7 +36,7 @@ const RouterApp = () => {
         <Route path={PathsUrl.UsuarioEditar} element={<RegistrarUsuario />} />
         {/* <Route path={PathsUrl.UsuarioCambiarPwd} element={<CambiarPwd />} /> */}
 
-        <Route path={PathsUrl.RegistroListado} element={<ListadoRegistro />} />
+        <Route path={PathsUrl.RegistroListado} element={<TaskLog />} />
       </Routes>
     </>
   );

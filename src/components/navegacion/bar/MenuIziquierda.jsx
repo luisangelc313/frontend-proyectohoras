@@ -137,7 +137,9 @@ export const MenuIzquierda = ({ clases }) => {
             </Collapse>
           </List>
         )}
-        <Divider />
+        {permissions.usuarios && (
+          <Divider />
+        )}
         {permissions.usuarios && (
           <ListItem component={Link} button="true" to={PathsUrl.UsuarioListado}>
             <PeopleAltIcon sx={{ mr: 1 }} />
@@ -148,7 +150,9 @@ export const MenuIzquierda = ({ clases }) => {
             />
           </ListItem>
         )}
-        <Divider />
+        {permissions.registroTiempos && (
+          <Divider />
+        )}
         {permissions.registroTiempos && (
           <ListItem component={Link} button="true" to={PathsUrl.RegistroListado}>
             {/* <i className="material-icons" style={{ marginRight: '10px' }}>account_box</i> */}
