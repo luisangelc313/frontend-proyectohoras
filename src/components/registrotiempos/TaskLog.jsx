@@ -17,6 +17,7 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import ClearIcon from '@mui/icons-material/Clear';
@@ -142,20 +143,25 @@ const TaskLog = () => {
                     InputLabelProps: {
                       sx: {
                         fontSize: 17,
-                        fontWeight: 'bold',
+                        fontWeight: '500',
                         fontFamily: 'Arial'
                       } // Cambia el tamaño del label
                     }
                   }
                 }}
               />
-              <IconButton
-                aria-label="Limpiar fecha de inicio"
-                onClick={() => setFechaInicio(null)}
-                size="small"
-              >
-                <ClearIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Limpiar Fecha Inicio">
+                <IconButton
+                  aria-label="Limpiar fecha de inicio"
+                  onClick={() => {
+                    setFechaInicio(null);
+                    setFechaSeleccionada(null);
+                  }}
+                  size="small"
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <DatePicker
                 label="A"
                 value={fechaFin}
@@ -172,20 +178,26 @@ const TaskLog = () => {
                     InputLabelProps: {
                       sx: {
                         fontSize: 17,
-                        fontWeight: 'bold',
+                        fontWeight: '500',
                         fontFamily: 'Arial'
                       } // Cambia el tamaño del label
                     }
                   }
                 }}
               />
-              <IconButton
-                aria-label="Limpiar fecha fin"
-                onClick={() => setFechaFin(null)}
-                size="small"
-              >
-                <ClearIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Limpiar Fecha Fin">
+                <IconButton
+                  aria-label="Limpiar fecha fin"
+                  onClick={() => {
+                    setFechaFin(null);
+                    setFechaSeleccionada(null);
+                  }
+                  }
+                  size="small"
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Box>
           </LocalizationProvider>
 
