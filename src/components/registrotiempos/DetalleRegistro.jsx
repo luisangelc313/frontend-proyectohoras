@@ -19,6 +19,7 @@ import ClearAll from '@mui/icons-material/ClearAll';
 import SaveIcon from '@mui/icons-material/Save';
 
 import style from "../Tool/style";
+import RenderRow from './RenderRow';
 
 const clientes = ['COLGATE', 'SAINT GOBAIN'];
 const soluciones = ['CONNECTOR', 'EREQ'];
@@ -27,7 +28,7 @@ const horas = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const DetalleRegistro = ({ fecha }) => {
   //Estado para los renglones dinámicos
-  const [rows, setRows] = useState([{}]); // Empieza con un renglón vacío
+  const [rows, setRows] = useState([]); // Empieza con un renglón vacío
 
   // Cuando cambia la fecha seleccionada, simula una petición a la API
   useEffect(() => {
@@ -46,7 +47,13 @@ const DetalleRegistro = ({ fecha }) => {
     setRows([...rows, {}]);
   };
 
+  const handleRowChange = (index, field, value) => {
+    const newRows = [...rows];
+    newRows[index] = { ...newRows[index], [field]: value };
+    setRows(newRows);
+  };
 
+  // Este evento se ejecuta cuando se Guarda la Información.
   const handleGuardarRegistros = e => {
     e.preventDefault();
     setSavedRows([...savedRows, ...temporalRows]);
@@ -223,7 +230,23 @@ const DetalleRegistro = ({ fecha }) => {
               </IconButton>
             </Tooltip>
           </Grid2>
+
         </Grid2>
+
+        {/* renderizado cuando se da click en "Nuevo Renglón" */}
+        {rows.map((row, idx) => (
+          <RenderRow
+            key={idx}
+            index={idx}
+            row={row}
+            clientes={clientes}
+            soluciones={soluciones}
+            actividades={actividades}
+            horas={horas}
+            handleRowChange={handleRowChange}
+          />
+        ))}
+
 
         {/* sección de botones (Cancelar, Limpiar, Guardar) */}
         <Grid2
