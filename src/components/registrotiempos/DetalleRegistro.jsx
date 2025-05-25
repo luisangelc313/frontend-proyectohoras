@@ -16,12 +16,18 @@ import SaveIcon from '@mui/icons-material/Save';
 import style from "../Tool/style";
 import RenderRow from './RenderRow';
 
-const clientes = ['COLGATE', 'SAINT GOBAIN'];
-const soluciones = ['CONNECTOR', 'EREQ'];
-const actividades = ['DESARROLLO', 'BUG', 'MANTENIMIENTO', 'OTROS'];
-const horas = [1, 2, 3, 4, 5, 6, 7, 8];
+//const clientes = ['COLGATE', 'SAINT GOBAIN'];
+//const soluciones = ['CONNECTOR', 'EREQ'];
+//const actividades = ['DESARROLLO', 'BUG', 'MANTENIMIENTO', 'OTROS'];
+//const horas = [1, 2, 3, 4, 5, 6, 7, 8];
 
-const DetalleRegistro = ({ fecha }) => {
+const DetalleRegistro = ({
+  fecha,
+  listadoClientes,
+  listadoSoluciones,
+  listadoActividades,
+  usuarioSesion
+}) => {
   //Estado para los renglones dinámicos
   const [rows, setRows] = useState([]); // Empieza con un renglón vacío
 
@@ -100,7 +106,7 @@ const DetalleRegistro = ({ fecha }) => {
           </Typography>
         )}
 
-        {fecha && console.log("Fecha Seleccionada:", fecha)}
+        {/* {fecha && console.log("Fecha Seleccionada:", fecha)} */}
 
       </Box>
       <Divider sx={{ my: 3 }} />
@@ -112,12 +118,12 @@ const DetalleRegistro = ({ fecha }) => {
               key={row.id}
               index={idx}
               row={row}
-              clientes={clientes}
-              soluciones={soluciones}
-              actividades={actividades}
-              horas={horas}
+              clientes={listadoClientes}
+              soluciones={listadoSoluciones}
+              actividades={listadoActividades}
               handleRowChange={handleRowChange}
               handleRemoveRow={handleRemoveRow}
+              usuarioSesion={usuarioSesion}
             />
           ))}
 

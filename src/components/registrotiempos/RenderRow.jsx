@@ -2,11 +2,12 @@ import {
     TextField,
     FormControl,
     Grid2,
-    InputLabel,
-    Select,
-    MenuItem,
+    //InputLabel,
+    //Select,
+    //MenuItem,
     Tooltip,
-    IconButton
+    IconButton,
+    Autocomplete
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -17,54 +18,115 @@ const RenderRow = ({
     clientes,
     soluciones,
     actividades,
-    horas,
     handleRowChange,
-    handleRemoveRow }) => {
+    handleRemoveRow,
+    usuarioSesion }) => {
+
+    const maxHoras = Number(usuarioSesion?.usuarioConfig?.horasPermitidasPorDia) || 0;
+    const horasPermitidas = Array.from({ length: maxHoras }, (_, i) => ({
+        id: i + 1,
+        nombre: String(i + 1)
+    }));
+
     return (
         <Grid2 container spacing={2} sx={{ mt: 2 }}>
             {/* Cliente */}
             <Grid2 size={{ xs: 6, md: 2 }}>
                 <FormControl variant="outlined" size="small" fullWidth required>
-                    <InputLabel id={`cliente-label${index}`}>Cliente</InputLabel>
-                    <Select
-                        labelId={`cliente-label${index}`}
-                        id="cliente"
-                        name="clienteId"
-                        required
-                        label="Cliente"
-                        value={row.cliente || ""}
-                        onChange={e => handleRowChange(index, "cliente", e.target.value)}
+                    {/* <InputLabel id={`cliente-label${index}`}>Cliente</InputLabel> */}
+                    <Tooltip
+                        title={
+                            row.cliente
+                                ? (
+                                    (clientes.find(c => c.clienteId === row.cliente)?.nombre?.length > 9)
+                                        ? clientes.find(c => c.clienteId === row.cliente)?.nombre
+                                        : ""
+                                )
+                                : ""
+                        }
+                        disableHoverListener={
+                            !row.cliente ||
+                            !(clientes.find(c => c.clienteId === row.cliente)?.nombre?.length > 9)
+                        }
+                        arrow
+                        placement="top"
                     >
-                        <MenuItem value="">
-                            <em>Ninguno</em>
-                        </MenuItem>
-                        {clientes.map(c => (
-                            <MenuItem key={c} value={c}>{c}</MenuItem>
-                        ))}
-                    </Select>
+                        <Autocomplete
+                            options={clientes}
+                            getOptionLabel={option => option.nombre || ""}
+                            isOptionEqualToValue={(option, value) => option.clienteId === value.clienteId}
+                            value={clientes.find(c => c.clienteId === row.cliente) || null}
+                            onChange={(_, newValue) =>
+                                handleRowChange(index, "cliente", newValue ? newValue.clienteId : "")
+                            }
+                            renderOption={(props, option, { index }) => (
+                                <li {...props} key={`${option.clienteId}-${index}`}>
+                                    {option.nombre}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Cliente"
+                                    size="small"
+                                    required
+                                    variant="outlined"
+                                />
+                            )}
+                            noOptionsText="Sin resultados"
+                            fullWidth
+                        />
+                    </Tooltip>
                 </FormControl>
             </Grid2>
 
             {/* Solución */}
             <Grid2 size={{ xs: 6, md: 2 }}>
                 <FormControl variant="outlined" size="small" fullWidth required>
-                    <InputLabel id={`solucion-label${index}`}>Solución</InputLabel>
-                    <Select
-                        labelId={`solucion-label${index}`}
-                        id="solucion"
-                        name="solucionId"
-                        required
-                        value={row.solucion || ""}
-                        label="Solución"
-                        onChange={e => handleRowChange(index, "solucion", e.target.value)}
+                    {/* <InputLabel id={`solucion-label${index}`}>Solución</InputLabel> */}
+                    <Tooltip
+                        title={
+                            row.solucion
+                                ? (
+                                    (soluciones.find(c => c.solucionId === row.solucion)?.nombre?.length > 9)
+                                        ? soluciones.find(c => c.solucionId === row.solucion)?.nombre
+                                        : ""
+                                )
+                                : ""
+                        }
+                        disableHoverListener={
+                            !row.solucion ||
+                            !(soluciones.find(c => c.solucionId === row.solucion)?.nombre?.length > 9)
+                        }
+                        arrow
+                        placement="top"
                     >
-                        <MenuItem value="">
-                            <em>Ninguno</em>
-                        </MenuItem>
-                        {soluciones.map(s => (
-                            <MenuItem key={s} value={s}>{s}</MenuItem>
-                        ))}
-                    </Select>
+                        <Autocomplete
+                            options={soluciones}
+                            getOptionLabel={option => option.nombre || ""}
+                            isOptionEqualToValue={(option, value) => option.solucionId === value.solucionId}
+                            value={soluciones.find(c => c.solucionId === row.solucion) || null}
+                            onChange={(_, newValue) =>
+                                handleRowChange(index, "solucion", newValue ? newValue.solucionId : "")
+                            }
+                            renderOption={(props, option, { index }) => (
+                                <li {...props} key={`${option.solucionId}-${index}`}>
+                                    {option.nombre}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Solucion"
+                                    size="small"
+                                    required
+                                    variant="outlined"
+                                />
+                            )}
+                            noOptionsText="Sin resultados"
+                            fullWidth
+                        />
+                    </Tooltip>
                 </FormControl>
             </Grid2>
 
@@ -92,20 +154,50 @@ const RenderRow = ({
             {/* Actividad */}
             <Grid2 size={{ xs: 6, md: 2 }}>
                 <FormControl variant="outlined" size="small" fullWidth required>
-                    <InputLabel id={`actividad-label${index}`}>Actividad</InputLabel>
-                    <Select
-                        labelId={`actividad-label${index}`}
-                        id="actividad"
-                        name="actividadId"
-                        required
-                        label="Actividad"
-                        value={row.actividad || ""}
-                        onChange={e => handleRowChange(index, "actividad", e.target.value)}
+                    {/* <InputLabel id={`actividad-label${index}`}>Actividad</InputLabel> */}
+                    <Tooltip
+                        title={
+                            row.actividad
+                                ? (
+                                    (actividades.find(c => c.actividadId === row.actividad)?.nombre?.length > 9)
+                                        ? actividades.find(c => c.actividadId === row.actividad)?.nombre
+                                        : ""
+                                )
+                                : ""
+                        }
+                        disableHoverListener={
+                            !row.actividad ||
+                            !(actividades.find(c => c.actividadId === row.actividad)?.nombre?.length > 9)
+                        }
+                        arrow
+                        placement="top"
                     >
-                        {actividades.map(a => (
-                            <MenuItem key={a} value={a}>{a}</MenuItem>
-                        ))}
-                    </Select>
+                        <Autocomplete
+                            options={actividades}
+                            getOptionLabel={option => option.nombre || ""}
+                            isOptionEqualToValue={(option, value) => option.actividadId === value.actividadId}
+                            value={actividades.find(c => c.actividadId === row.actividad) || null}
+                            onChange={(_, newValue) =>
+                                handleRowChange(index, "actividad", newValue ? newValue.actividadId : "")
+                            }
+                            renderOption={(props, option, { index }) => (
+                                <li {...props} key={`${option.actividadId}-${index}`}>
+                                    {option.nombre}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Actividad"
+                                    size="small"
+                                    required
+                                    variant="outlined"
+                                />
+                            )}
+                            noOptionsText="Sin resultados"
+                            fullWidth
+                        />
+                    </Tooltip>
                 </FormControl>
             </Grid2>
 
@@ -119,21 +211,32 @@ const RenderRow = ({
                         sx={{ minWidth: 90 }}
                         required
                     >
-                        <InputLabel id={`horas-label${index}`}>Horas</InputLabel>
-                        <Select
-                            labelId="actividad-label"
-                            id={`horas-label${index}`}
-                            name="horasValor"
-                            required
-                            label="Horas"
-                            value={row.horas || ""}
-                            onChange={e => handleRowChange(index, "horas", e.target.value)}
-                            sx={{ minWidth: 60 }}
-                        >
-                            {horas.map(h => (
-                                <MenuItem key={h} value={h}>{h}</MenuItem>
-                            ))}
-                        </Select>
+                        {/* <InputLabel id={`horas-label${index}`}>Horas</InputLabel> */}
+                        <Autocomplete
+                            options={horasPermitidas}
+                            getOptionLabel={option => option.nombre}
+                            isOptionEqualToValue={(option, value) => option.id === value.id}
+                            value={horasPermitidas.find(h => h.id === row.horas) || null}
+                            onChange={(_, newValue) =>
+                                handleRowChange(index, "horas", newValue ? newValue.id : "")
+                            }
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.id}>
+                                    {option.nombre}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Horas"
+                                    size="small"
+                                    required
+                                    variant="outlined"
+                                />
+                            )}
+                            noOptionsText="Sin resultados"
+                            fullWidth
+                        />
                     </FormControl>
 
                     {/* Botón "Eliminar renglón" */}
@@ -150,7 +253,7 @@ const RenderRow = ({
                 </div>
             </Grid2>
 
-        </Grid2>
+        </Grid2 >
     );
 };
 

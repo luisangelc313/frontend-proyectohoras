@@ -2,7 +2,7 @@ import HttpCliente from "../services/HttpCliente";
 //import axios from 'axios';
 
 
-export const obtenerCapturaInicial = () => {
+export const obtenerCapturaInicialAction = () => {
     return new Promise((resolve, reject) => {
         HttpCliente.get(`registro/capturainicio`)
             .then((response) => {
