@@ -4,10 +4,22 @@ import {
     Grid2,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Tooltip,
+    IconButton
 } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
 
-const RenderRow = ({ row, index, clientes, soluciones, actividades, horas, handleRowChange }) => {
+
+const RenderRow = ({
+    row,
+    index,
+    clientes,
+    soluciones,
+    actividades,
+    horas,
+    handleRowChange,
+    handleRemoveRow }) => {
     return (
         <Grid2 container spacing={2} sx={{ mt: 2 }}>
             {/* Cliente */}
@@ -68,6 +80,8 @@ const RenderRow = ({ row, index, clientes, soluciones, actividades, horas, handl
                     multiline
                     minRows={1}
                     maxRows={1}
+                    value={row.proyecto || ""}
+                    onChange={e => handleRowChange(index, "proyecto", e.target.value)}
                     slotProps={{
                         htmlInput: { maxLength: 1000 },
                         style: { overflowY: 'hidden' }
@@ -96,23 +110,44 @@ const RenderRow = ({ row, index, clientes, soluciones, actividades, horas, handl
             </Grid2>
 
             {/* Horas */}
-            <Grid2 size={{ xs: 6, md: 1 }}>
-                <FormControl variant="outlined" size="small" fullWidth required>
-                    <InputLabel id={`horas-label${index}`}>Horas</InputLabel>
-                    <Select
-                        labelId="actividad-label"
-                        id={`horas-label${index}`}
-                        name="horasValor"
+            <Grid2 size={{ xs: 6, md: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <FormControl
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        sx={{ minWidth: 90 }}
                         required
-                        label="Horas"
-                        value={row.horas || ""}
-                        onChange={e => handleRowChange(index, "horas", e.target.value)}
                     >
-                        {horas.map(h => (
-                            <MenuItem key={h} value={h}>{h}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                        <InputLabel id={`horas-label${index}`}>Horas</InputLabel>
+                        <Select
+                            labelId="actividad-label"
+                            id={`horas-label${index}`}
+                            name="horasValor"
+                            required
+                            label="Horas"
+                            value={row.horas || ""}
+                            onChange={e => handleRowChange(index, "horas", e.target.value)}
+                            sx={{ minWidth: 60 }}
+                        >
+                            {horas.map(h => (
+                                <MenuItem key={h} value={h}>{h}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    {/* Botón "Eliminar renglón" */}
+                    <Tooltip title="Eliminar renglón">
+                        <IconButton
+                            color="error"
+                            onClick={() => handleRemoveRow(index)}
+                            size="small"
+                            sx={{ ml: 1 }}
+                        >
+                            <DeleteIcon />
+                        </IconButton>
+                    </Tooltip>
+                </div>
             </Grid2>
 
         </Grid2>

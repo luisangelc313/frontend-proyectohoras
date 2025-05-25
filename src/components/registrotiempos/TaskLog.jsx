@@ -216,7 +216,10 @@ const TaskLog = () => {
         </Grid2>
 
         {/* Panel de Actividades */}
-        <Grid2 item size={{ xs: 8, md: 9, lg: 9 }} sx={{ p: 2 }}>
+        <Grid2 item size={{ xs: 8, md: 9, lg: 9 }} sx={{
+          p: 2, height: '95%',
+          overflowY: 'auto'
+        }}>
           {/* Componente ActividadesDelDia */}
           <DetalleRegistro fecha={fechaSeleccionada} />
         </Grid2>
