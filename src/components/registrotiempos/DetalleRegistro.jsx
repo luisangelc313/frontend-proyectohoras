@@ -12,10 +12,15 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import Cancel from '@mui/icons-material/Cancel';
 import ClearAll from '@mui/icons-material/ClearAll';
 import SaveIcon from '@mui/icons-material/Save';
+import CircularProgress from "@mui/material/CircularProgress";
 
 import style from "../Tool/style";
 import RenderRow from './RenderRow';
 import { useStateValue } from "../../context/store";
+import {
+  guardarTiemposProyecto
+} from "../../actions/RegistroTiemposAction";
+import { HttpStatus } from "../../utils/HttpStatus";
 
 
 const DetalleRegistro = ({
@@ -30,6 +35,7 @@ const DetalleRegistro = ({
   //const [showErrors, setShowErrors] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
+  const [loading, setLoading] = useState(false);
   const [, dispatch] = useStateValue();
 
   useEffect(() => {
@@ -38,7 +44,20 @@ const DetalleRegistro = ({
 
   const handleClickAggNuevoRenglon = e => {
     e.preventDefault();
-    setRows([...rows, { id: Date.now() }]);
+    //setRows([...rows, { id: Date.now() }]);
+    setRows([
+      ...rows,
+      {
+        id: Date.now(),
+        usuarioId: usuarioSesion?.id || "", // o como obtengas el usuario
+        mes: "",
+        clienteId: "",
+        solucionId: "",
+        proyecto: "",
+        actividadId: "",
+        horas: ""
+      }
+    ]);
   };
 
   const handleRowChange = (index, field, value) => {
@@ -77,7 +96,7 @@ const DetalleRegistro = ({
   // };
 
   // Este evento se ejecuta cuando se Guarda la Información.
-  const handleGuardarRegistros = e => {
+  const handleGuardarRegistros = async e => {
     e.preventDefault();
 
     if (!rows || rows.length === 0) return;
@@ -96,6 +115,7 @@ const DetalleRegistro = ({
     });
 
     setFieldErrors(newFieldErrors);
+    setLoading(true); // <-- Activa el loading
 
     // Buscar si algún renglón tiene un campo obligatorio vacío
     // const renglonIncompleto = rows.some(row =>
@@ -119,11 +139,66 @@ const DetalleRegistro = ({
 
     //setShowErrors(false); // <-- Ocultar errores si todo está bien
     setFieldErrors({});
+    const msjError = "Ocurrió un error al guardar los registros.";
 
-    // try {
-    // } catch (error) {
-    // } finally {
-    // }
+    const myRequest = rows.map(row => ({
+      usuarioId: usuarioSesion.usuarioId || "",
+      mes: row.mes,
+      clienteId: row.cliente,
+      solucionId: row.solucion,
+      proyecto: row.proyecto,
+      actividadId: row.actividad,
+      horas: row.horas
+    }));
+
+    //console.log("Datos a guardar:", datosAGuardar);
+    setLoading(false);
+    //return;
+
+    try {
+      const payload = { registros: myRequest };
+      const response = await guardarTiemposProyecto(payload);
+      let { status, statusText } = response;
+
+      if (status === HttpStatus.OK && statusText === "OK") {
+        dispatch({
+          type: "OPEN_SNACKBAR",
+          openMensaje: {
+            open: true,
+            mensaje: "Información registrada correctamente.",
+            severity: "success",
+          },
+        });
+
+      } else {
+        dispatch({
+          type: "OPEN_SNACKBAR",
+          openMensaje: {
+            open: true,
+            mensaje: msjError,
+            severity: "error",
+            vertical: "bottom",
+            horizontal: "left"
+          },
+        });
+      }
+
+    } catch (error) {
+      const errorMessage = error?.data?.errors?.msg || msjError;
+      dispatch({
+        type: "OPEN_SNACKBAR",
+        openMensaje: {
+          open: true,
+          mensaje: errorMessage,
+          severity: "error",
+          vertical: "bottom",
+          horizontal: "left"
+        },
+      });
+
+    } finally {
+      setLoading(false); // <-- Desactiva el loading
+    }
 
   };
 
@@ -230,11 +305,12 @@ const DetalleRegistro = ({
                 color="primary"
                 size="medium"
                 sx={{ mx: 2 }}
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                 style={style.submit}
                 onClick={handleGuardarRegistros}
-                startIcon={<SaveIcon />}
               >
-                Guardar
+                {loading ? "Guardando..." : "Guardar"}
               </Button>
             </Grid2>
           </Grid2>

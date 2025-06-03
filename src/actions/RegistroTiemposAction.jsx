@@ -13,9 +13,9 @@ export const obtenerCapturaInicialAction = () => {
 };
 
 
-export const guardarTiemposProyecto = (objTiemposProyecto) => {
+export const guardarTiemposProyecto = data => {
     return new Promise((resolve, reject) => {
-        HttpCliente.post(`registro`, objTiemposProyecto)
+        HttpCliente.post(`registro`, data)
             .then((response) => {
                 resolve(response);
             })
