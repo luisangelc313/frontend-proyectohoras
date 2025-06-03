@@ -15,6 +15,7 @@ import { makeStyles } from "@mui/styles";
 import ArrowRight from '@mui/icons-material/ArrowRight';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import AddAlarm from '@mui/icons-material/AddAlarm';
+import Timeline from '@mui/icons-material/Timeline';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import PersonIcon from '@mui/icons-material/Person';
 //import { ExpandLess, ExpandMore } from '@mui/icons-material';
@@ -154,12 +155,21 @@ export const MenuIzquierda = ({ clases }) => {
           <Divider />
         )}
         {permissions.registroTiempos && (
-          <ListItem component={Link} button="true" to={PathsUrl.RegistroListado}>
+          <ListItem component={Link} button="true" to={PathsUrl.RegistroTiempos}>
             {/* <i className="material-icons" style={{ marginRight: '10px' }}>account_box</i> */}
             <AddAlarm sx={{ mr: 1 }} />
             <ListItemText
               clases={{ primary: clases.listItemText }}
               primary="Registro Tiempos"
+            />
+          </ListItem>
+        )}
+        {permissions.registroTiempos && (
+          <ListItem component={Link} button="true" to={PathsUrl.RegistroPivote}>
+            <Timeline sx={{ mr: 1 }} />
+            <ListItemText
+              clases={{ primary: clases.listItemText }}
+              primary="Pivote"
             />
           </ListItem>
         )}

@@ -23,6 +23,7 @@ export const PathsUrl = {
   UsuarioEditar: "/usuario/captura/:id",
   UsuarioCambiarPwd: "/usuario/cambiarpwd",
 
-  RegistroListado: "/registro/tasklog",
+  RegistroTiempos: "/registro/tasklog",
   RegistroDetalle: "/registro/detalle",
+  RegistroPivote: "/registro/pivote",
 };

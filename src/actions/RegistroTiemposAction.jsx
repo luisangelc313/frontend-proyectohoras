@@ -13,3 +13,12 @@ export const obtenerCapturaInicialAction = () => {
 };
 
 
+export const guardarTiemposProyecto = (objTiemposProyecto) => {
+    return new Promise((resolve, reject) => {
+        HttpCliente.post(`registro`, objTiemposProyecto)
+            .then((response) => {
+                resolve(response);
+            })
+            .catch((error) => reject(error.response));
+    });
+}

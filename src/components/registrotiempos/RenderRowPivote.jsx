@@ -9,7 +9,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 
 
-const RenderRow = ({
+const RenderRowPivote = ({
     row,
     index,
     clientes,
@@ -17,61 +17,16 @@ const RenderRow = ({
     actividades,
     handleRowChange,
     handleRemoveRow,
-    errors = {}
-}) => {
+    usuarioSesion }) => {
 
-    const mesesDelAnio = Array.from({ length: 12 }, (_, i) => ({
+    const maxHoras = Number(usuarioSesion?.usuarioConfig?.horasPermitidasPorDia) || 0;
+    const horasPermitidas = Array.from({ length: maxHoras }, (_, i) => ({
         id: i + 1,
-        nombre: new Date(0, i).toLocaleString('es-ES', { month: 'long' }).toUpperCase()//.replace(/^\w/, c => c.toUpperCase())
+        nombre: String(i + 1)
     }));
 
     return (
-        <Grid2 container spacing={1} sx={{ mt: 2 }}>
-            {/* MES */}
-            <Grid2 size={{ xs: 6, md: 1 }}>
-                <FormControl variant="outlined" size="small" fullWidth required>
-                    <Tooltip
-                        title={row.mes
-                            ? (mesesDelAnio.find(m => m.id === row.mes)?.nombre || "")
-                            : ""}
-                        disableHoverListener={
-                            !row.mes ||
-                            !(mesesDelAnio.find(m => m.id === row.mes)?.nombre?.length > 4)
-                        }
-                        arrow
-                        placement="top"
-                    >
-                        <Autocomplete
-                            options={mesesDelAnio}
-                            getOptionLabel={option => option.nombre}
-                            isOptionEqualToValue={(option, value) => option.id === value.id}
-                            value={mesesDelAnio.find(m => m.id === row.mes) || null}
-                            onChange={(_, newValue) =>
-                                handleRowChange(index, "mes", newValue ? newValue.id : "")
-                            }
-                            renderOption={(props, option, { index }) => (
-                                <li {...props} key={`${option.id}-${index}`}>
-                                    {option.nombre}
-                                </li>
-                            )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Mes"
-                                    size="small"
-                                    error={errors.mes}
-                                    helperText={errors.mes ? "Campo requerido" : ""}
-                                    required
-                                    variant="outlined"
-                                />
-                            )}
-                            noOptionsText="Sin resultados"
-                            fullWidth
-                        />
-                    </Tooltip>
-                </FormControl>
-            </Grid2>
-
+        <Grid2 container spacing={2} sx={{ mt: 2 }}>
             {/* Cliente */}
             <Grid2 size={{ xs: 6, md: 2 }}>
                 <FormControl variant="outlined" size="small" fullWidth required>
@@ -111,8 +66,6 @@ const RenderRow = ({
                                     {...params}
                                     label="Cliente"
                                     size="small"
-                                    error={errors.cliente}
-                                    helperText={errors.cliente ? "Campo requerido" : ""}
                                     required
                                     variant="outlined"
                                 />
@@ -125,7 +78,7 @@ const RenderRow = ({
             </Grid2>
 
             {/* Solución */}
-            <Grid2 size={{ xs: 6, md: 2, lg: 2 }}>
+            <Grid2 size={{ xs: 6, md: 2 }}>
                 <FormControl variant="outlined" size="small" fullWidth required>
                     {/* <InputLabel id={`solucion-label${index}`}>Solución</InputLabel> */}
                     <Tooltip
@@ -164,8 +117,6 @@ const RenderRow = ({
                                     label="Solucion"
                                     size="small"
                                     required
-                                    error={errors.solucion}
-                                    helperText={errors.solucion ? "Campo requerido" : ""}
                                     variant="outlined"
                                 />
                             )}
@@ -177,7 +128,7 @@ const RenderRow = ({
             </Grid2>
 
             {/* Proyecto */}
-            <Grid2 size={{ xs: 12, md: 4, lg: 4 }}>
+            <Grid2 size={{ xs: 12, md: 4 }}>
                 <TextField
                     label="Proyecto"
                     name="proyecto"
@@ -186,8 +137,6 @@ const RenderRow = ({
                     fullWidth
                     required
                     multiline
-                    error={errors.proyecto}
-                    helperText={errors.proyecto ? "Campo requerido" : ""}
                     minRows={1}
                     maxRows={1}
                     value={row.proyecto || ""}
@@ -200,7 +149,7 @@ const RenderRow = ({
             </Grid2>
 
             {/* Actividad */}
-            <Grid2 size={{ xs: 6, md: 2, lg: 2 }}>
+            <Grid2 size={{ xs: 6, md: 2 }}>
                 <FormControl variant="outlined" size="small" fullWidth required>
                     {/* <InputLabel id={`actividad-label${index}`}>Actividad</InputLabel> */}
                     <Tooltip
@@ -239,8 +188,6 @@ const RenderRow = ({
                                     label="Actividad"
                                     size="small"
                                     required
-                                    error={errors.actividad}
-                                    helperText={errors.actividad ? "Campo requerido" : ""}
                                     variant="outlined"
                                 />
                             )}
@@ -252,7 +199,7 @@ const RenderRow = ({
             </Grid2>
 
             {/* Horas */}
-            <Grid2 size={{ xs: 6, md: 1, lg: 1 }}>
+            <Grid2 size={{ xs: 6, md: 2 }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <FormControl
                         variant="outlined"
@@ -261,28 +208,32 @@ const RenderRow = ({
                         sx={{ minWidth: 90 }}
                         required
                     >
-                        <TextField
-                            label="Horas"
-                            size="small"
-                            required
-                            variant="outlined"
-                            error={errors.horas}
-                            helperText={errors.horas ? "Campo requerido" : ""}
-                            value={row.horas || ""}
-                            onChange={e => {
-                                // Solo permite números, máximo 3 dígitos, y elimina ceros a la izquierda
-                                let val = e.target.value.replace(/\D/g, '').slice(0, 3);
-                                if (val.length > 1) val = val.replace(/^0+/, '');
-                                // Solo acepta números válidos (mayor o igual a 1)
-                                if (val === "" || (Number(val) >= 1 && Number(val) <= 999)) {
-                                    handleRowChange(index, "horas", val === "" ? "" : Number(val));
-                                }
-                            }}
-                            inputProps={{
-                                inputMode: "numeric",
-                                pattern: "[0-9]*",
-                                maxLength: 3
-                            }}
+                        <Autocomplete
+                            options={horasPermitidas}
+                            getOptionLabel={option => option.nombre}
+                            isOptionEqualToValue={(option, value) => option.id === value.id}
+                            value={horasPermitidas.find(h => h.id === row.horas) || null}
+                            onChange={(_, newValue) =>
+                                handleRowChange(index, "horas", newValue ? newValue.id : "")
+                            }
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.id}>
+                                    {option.nombre}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Horas"
+                                    size="small"
+                                    required
+                                    variant="outlined"
+                                    slotProps={{
+                                        //htmlInput: { maxLength: 2 },
+                                    }}
+                                />
+                            )}
+                            noOptionsText="Sin resultados"
                             fullWidth
                         />
                     </FormControl>
@@ -305,4 +256,4 @@ const RenderRow = ({
     );
 };
 
-export default RenderRow;
+export default RenderRowPivote;
