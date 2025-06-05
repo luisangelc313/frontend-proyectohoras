@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -25,6 +26,7 @@ import {
   obtenerRegistrosPaginadoAction,
 } from "../../actions/RegistroTiemposAction";
 import TblRegistrosTiemposPorProyecto from "./TblRegistrosTiemposPorProyecto";
+import ConfirmDialog from "./hooks/ConfirmDialog";
 
 
 const DetalleRegistro = ({
@@ -33,14 +35,22 @@ const DetalleRegistro = ({
   listadoActividades,
   usuarioSesion
 }) => {
+  const navigate = useNavigate();
   //Estado para los renglones dinámicos
   const [rows, setRows] = useState([]); // Empieza con un renglón vacío
 
-  const meses = Array.from({ length: 12 }, (_, i) => ({
-    id: i + 1,
-    nombre: new Date(0, i).toLocaleString('es-ES', { month: 'long' }).toUpperCase(),//.replace(/^\w/, c => c.toUpperCase())
-    hora: 0
-  }));
+  const [, setAbandonar] = useState(false);
+  const [totalGeneral, setTotalGeneral] = useState(0);
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [accionConfirm, setAccionConfirm] = useState(""); // "cancelar" o "limpiar"
+
+  const [meses, setMeses] = useState(
+    Array.from({ length: 12 }, (_, i) => ({
+      id: i + 1,
+      nombre: new Date(0, i).toLocaleString('es-ES', { month: 'long' }).toUpperCase(),//.replace(/^\w/, c => c.toUpperCase())
+      hora: 0
+    }))
+  );
 
   //const [showErrors, setShowErrors] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -77,6 +87,23 @@ const DetalleRegistro = ({
         if (response && response.data && response.status === 200 && response.statusText === "OK") {
 
           if (response.data && response.data.length > 0) {
+
+            //console.log("cuentas Horas:", response.data[0].cuentasHoras);
+            const cuentasHoras = response.data[0]?.cuentasHoras || [];
+            const totalGeneral = response.data[0]?.totalGeneral || 0;
+            // Copia el array meses
+            const mesesActualizados = meses.map(mes => {
+              // Busca si hay un registro de horas para este mes
+              const encontrado = cuentasHoras.find(c => c.mesID === mes.id);
+              return {
+                ...mes,
+                hora: encontrado ? encontrado.horas : 0
+              };
+            });
+
+            setMeses(mesesActualizados);
+            setTotalGeneral(totalGeneral);
+
             setRegistrosTiemposPorProyecto(response.data.map(item => ({
               registroId: item.registroId,
               mes: meses.find(m => m.id === item.mes)?.nombre || item.mes,
@@ -277,12 +304,114 @@ const DetalleRegistro = ({
 
   };
 
+  const handleCancelar = () => {
+    // Verifica si hay al menos un renglón con algún valor en los campos editables
+    const camposEditables = [...camposObligatorios];
+    const tieneAlgunValor = rows.some(row =>
+      camposEditables.some(
+        campo => row[campo] !== "" && row[campo] !== null && row[campo] !== undefined && row[campo] !== 0
+      )
+    );
+
+    if (rows.length > 0 && tieneAlgunValor) {
+      setAccionConfirm("cancelar");
+      setOpenConfirm(true);
+    } else {
+      setRows([]);
+      setFieldErrors({});
+    }
+  };
+
+  const handleConfirmCancel = () => {
+    if (accionConfirm === "limpiar") {
+      setRows([{
+        id: Date.now(),
+        usuarioId: usuarioSesion?.usuarioId || "",
+        mes: "",
+        clienteId: "",
+        solucionId: "",
+        proyecto: "",
+        actividadId: "",
+        horas: ""
+      }]);
+      setFieldErrors({});
+
+    } else if (accionConfirm === "abandonar") {
+      navigate("/"); // Redirige al home
+
+    } else {
+      setRows([]);
+      setFieldErrors({});
+    }
+
+    setOpenConfirm(false);
+    setAbandonar(false);
+  };
+
+  const handleCloseConfirm = () => {
+    setOpenConfirm(false);
+  };
+
+  const handleLimpiar = () => {
+    const camposEditables = [...camposObligatorios];
+    const tieneAlgunValor = rows.some(row =>
+      camposEditables.some(
+        campo => row[campo] !== "" && row[campo] !== null && row[campo] !== undefined && row[campo] !== 0
+      )
+    );
+
+    if (rows.length > 0 && tieneAlgunValor) {
+      setAccionConfirm("limpiar");
+      setOpenConfirm(true);
+
+    } else {
+      setRows([{
+        id: Date.now(),
+        usuarioId: usuarioSesion?.usuarioId || "",
+        mes: "",
+        clienteId: "",
+        solucionId: "",
+        proyecto: "",
+        actividadId: "",
+        horas: ""
+      }]);
+      setFieldErrors({});
+    }
+  };
+
+  const handleAbandonar = () => {
+    const camposEditables = [...camposObligatorios];
+    const tieneAlgunValor = rows.some(row =>
+      camposEditables.some(
+        campo => row[campo] !== "" && row[campo] !== null && row[campo] !== undefined && row[campo] !== 0
+      )
+    );
+
+    if (rows.length > 0 && tieneAlgunValor) {
+      setAccionConfirm("abandonar");
+      setOpenConfirm(true);
+      setAbandonar(true);
+    } else {
+      navigate("/"); // Redirige al home directamente si no hay datos
+    }
+  };
+
   return (
     <>
       <Box>
-        <Typography variant="h6">
-          Registro de Horas por Proyecto{" "}
-        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="h6">
+            Registro de Horas por Proyecto{" "}
+          </Typography>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleAbandonar}
+            sx={{ fontWeight: 500 }}
+          >
+            Abandonar Captura
+          </Button>
+        </Box>
         <Typography variant="h6" gutterBottom>
           <span
             style={{
@@ -345,7 +474,7 @@ const DetalleRegistro = ({
                 color="error"
                 size="medium"
                 sx={{ mx: 2 }}
-                //onClick={handleOpenDialogCancelar}
+                onClick={handleCancelar}
                 style={style.submit}
                 startIcon={<Cancel />}
               >
@@ -359,7 +488,7 @@ const DetalleRegistro = ({
                 color="secondary"
                 size="medium"
                 sx={{ mx: 2 }}
-                //onClick={handleLimpiarFormulario}
+                onClick={handleLimpiar}
                 style={style.submit}
                 startIcon={<ClearAll />}
               >
@@ -449,7 +578,7 @@ const DetalleRegistro = ({
                 captionSide: "bottom",
                 marginRight: 5,
               }}>Total General: </span>
-            {0}
+            {totalGeneral}
           </Typography>
         </Grid2>
 
@@ -480,6 +609,32 @@ const DetalleRegistro = ({
         )}
       </Grid2>
 
+      {/* Dialog para confirmar la cancelación */}
+      <ConfirmDialog
+        open={openConfirm}
+        title={
+          accionConfirm === "limpiar"
+            ? "¿Está seguro de que desea limpiar la captura?"
+            : accionConfirm === "abandonar"
+              ? "¿Está seguro de que desea abandonar la captura?"
+              : "¿Está seguro de que desea cancelar?"
+        }
+        content={
+          accionConfirm === "limpiar"
+            ? "Se eliminarán todos los datos capturados y se dejará solo un renglón vacío."
+            : accionConfirm === "abandonar"
+              ? "Se perderán los cambios no guardados."
+              : "Se perderán los cambios no guardados."
+        }
+        onClose={handleCloseConfirm}
+        onConfirm={handleConfirmCancel}
+        width={accionConfirm === "limpiar" || accionConfirm === "abandonar"
+          ? "570px" : ""
+        }
+        height={accionConfirm === "limpiar" || accionConfirm === "abandonar"
+          ? "220px" : ""
+        }
+      />
     </>
   )
 }
