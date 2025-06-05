@@ -12,15 +12,19 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import Cancel from '@mui/icons-material/Cancel';
 import ClearAll from '@mui/icons-material/ClearAll';
 import SaveIcon from '@mui/icons-material/Save';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import CircularProgress from "@mui/material/CircularProgress";
 
 import style from "../Tool/style";
+import { HttpStatus } from "../../utils/HttpStatus";
 import RenderRow from './RenderRow';
 import { useStateValue } from "../../context/store";
 import {
-  guardarTiemposProyecto
+  guardarTiemposProyectoAction,
+  obtenerRegistrosPaginadoAction,
 } from "../../actions/RegistroTiemposAction";
-import { HttpStatus } from "../../utils/HttpStatus";
+import TblRegistrosTiemposPorProyecto from "./TblRegistrosTiemposPorProyecto";
 
 
 const DetalleRegistro = ({
@@ -32,15 +36,90 @@ const DetalleRegistro = ({
   //Estado para los renglones dinámicos
   const [rows, setRows] = useState([]); // Empieza con un renglón vacío
 
+  const meses = Array.from({ length: 12 }, (_, i) => ({
+    id: i + 1,
+    nombre: new Date(0, i).toLocaleString('es-ES', { month: 'long' }).toUpperCase(),//.replace(/^\w/, c => c.toUpperCase())
+    hora: 0
+  }));
+
   //const [showErrors, setShowErrors] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
   const [loading, setLoading] = useState(false);
-  const [, dispatch] = useStateValue();
+  const [loadingTiemposPorProyecto, setLoadingTiemposPorProyecto] = useState(false);
+  const [{ sesionUsuario }, dispatch] = useStateValue();
+
+  // Variables para almacenar los datos de la API Registros Tiempos por Proyecto
+  const [registrosTiemposPorProyecto, setRegistrosTiemposPorProyecto] = useState([]);
 
   useEffect(() => {
-    console.log("usuarioSesion", usuarioSesion)
-  }, [usuarioSesion]);
+
+    const obtenerRegistrosTiemposPorProyecto = async () => {
+      setLoadingTiemposPorProyecto(true);
+      const msgError = "Ocurrió un error al obtener los registros de tiempos por proyecto.";
+
+      try {
+        const usuario = sesionUsuario?.usuario;
+        const payload = {
+          usuarioId: usuario?.usuarioId || "",
+          numeroPagina: 1,
+          cantidadElementos: 10,
+          descripcion: "",
+          solucionId: null,
+          clienteId: null,
+          actividadId: null,
+          fechaInicio: null,
+          fechaFin: null
+        };
+
+        const response = await obtenerRegistrosPaginadoAction(payload);
+
+        if (response && response.data && response.status === 200 && response.statusText === "OK") {
+
+          if (response.data && response.data.length > 0) {
+            setRegistrosTiemposPorProyecto(response.data.map(item => ({
+              registroId: item.registroId,
+              mes: meses.find(m => m.id === item.mes)?.nombre || item.mes,
+              cliente: item.cliente.nombre,
+              solucion: item.solucion.nombre,
+              proyecto: item.descripcion,
+              actividad: item.actividad.nombre,
+              horas: item.horas
+            })));
+          }
+
+        } else {
+          dispatch({
+            type: "OPEN_SNACKBAR",
+            openMensaje: {
+              open: true,
+              mensaje: msgError,
+              severity: "error",
+            },
+          });
+
+        }
+
+      } catch (error) {
+        console.log("Error Catch", error)
+        const errorMessage = error?.data?.errors?.msg || msgError;
+        dispatch({
+          type: "OPEN_SNACKBAR",
+          openMensaje: {
+            open: true,
+            mensaje: errorMessage,
+            severity: "error",
+          },
+        });
+
+      } finally {
+        setLoadingTiemposPorProyecto(false);
+      }
+    }
+
+    obtenerRegistrosTiemposPorProyecto();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sesionUsuario]);
 
   const handleClickAggNuevoRenglon = e => {
     e.preventDefault();
@@ -49,7 +128,7 @@ const DetalleRegistro = ({
       ...rows,
       {
         id: Date.now(),
-        usuarioId: usuarioSesion?.id || "", // o como obtengas el usuario
+        usuarioId: usuarioSesion?.usuarioId || "", // o como obtengas el usuario
         mes: "",
         clienteId: "",
         solucionId: "",
@@ -84,16 +163,16 @@ const DetalleRegistro = ({
     setRows(rows => rows.filter((_, idx) => idx !== index));
   };
 
+  const handleExportExcel = () => {
+    // Lógica para exportar a Excel
+  };
+
+  const handleExportPDF = () => {
+    // Lógica para exportar a PDF
+  };
+
   // Campos obligatorios
   const camposObligatorios = ["mes", "cliente", "solucion", "proyecto", "actividad", "horas"];
-
-  // const getRowErrors = (row) => {
-  //   const errors = {};
-  //   camposObligatorios.forEach(campo => {
-  //     errors[campo] = !row[campo] || row[campo] === "";
-  //   });
-  //   return errors;
-  // };
 
   // Este evento se ejecuta cuando se Guarda la Información.
   const handleGuardarRegistros = async e => {
@@ -117,10 +196,6 @@ const DetalleRegistro = ({
     setFieldErrors(newFieldErrors);
     setLoading(true); // <-- Activa el loading
 
-    // Buscar si algún renglón tiene un campo obligatorio vacío
-    // const renglonIncompleto = rows.some(row =>
-    //   camposObligatorios.some(campo => !row[campo] || row[campo] === "")
-    // );
 
     if (hasError) {
       //setShowErrors(true); // <-- Mostrar errores
@@ -151,13 +226,13 @@ const DetalleRegistro = ({
       horas: row.horas
     }));
 
-    //console.log("Datos a guardar:", datosAGuardar);
-    setLoading(false);
-    //return;
+    // console.log("Datos a guardar:", myRequest);
+    // setLoading(false);
+    // return;
 
     try {
       const payload = { registros: myRequest };
-      const response = await guardarTiemposProyecto(payload);
+      const response = await guardarTiemposProyectoAction(payload);
       let { status, statusText } = response;
 
       if (status === HttpStatus.OK && statusText === "OK") {
@@ -201,13 +276,6 @@ const DetalleRegistro = ({
     }
 
   };
-
-  const meses = Array.from({ length: 12 }, (_, i) => ({
-    id: i + 1,
-    nombre: new Date(0, i).toLocaleString('es-ES', { month: 'long' }).toUpperCase(),//.replace(/^\w/, c => c.toUpperCase())
-    hora: 0
-  }));
-
 
   return (
     <>
@@ -325,12 +393,49 @@ const DetalleRegistro = ({
             Resumen
           </Typography>
         </Grid2>
-        <Grid2 size={{ xs: 6, md: 5 }}>
+        <Grid2 size={{ xs: 6, md: 2 }}>
           <Typography variant="body1" gutterBottom>
             Cuenta de Horas
           </Typography>
         </Grid2>
-        <Grid2 size={{ xs: 6, md: 5 }}></Grid2>
+        <Grid2 size={{ xs: 6, md: 8 }}>
+          {/* botones de exportación para Excel y PDF */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Tooltip title="Exportar a Excel">
+              <IconButton
+                color="success"
+                size="large"
+                onClick={handleExportExcel}
+                sx={{
+                  border: '2px solid transparent',
+                  transition: 'border-color 0.2s',
+                  '&:hover': {
+                    border: '2px solid #1F4E78', // Cambia el color del border
+                  },
+                }}
+              >
+                <FileDownloadOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Exportar a PDF">
+              <IconButton
+                color="error"
+                size="large"
+                onClick={handleExportPDF}
+                sx={{
+                  border: '2px solid transparent',
+                  transition: 'border-color 0.2s',
+                  '&:hover': {
+                    border: '2px solid #1F4E78', // Cambia el color del border
+                    //color: '#F2F2F2'
+                  },
+                }}
+              >
+                <PictureAsPdfIcon />
+              </IconButton>
+            </Tooltip>
+          </div>
+        </Grid2>
       </Grid2>
 
       <Grid2 container spacing={1} sx={{ mt: 2 }}>
@@ -357,12 +462,22 @@ const DetalleRegistro = ({
                 gutterBottom
                 sx={{ display: 'inline-block', marginLeft: idx === 0 ? 0 : 2 }}
               >
-                {mes.nombre}: <b>{mes.hora ?? 0}</b>,
+                {mes.nombre}: <b>{mes.hora ?? 0}</b>
               </Typography>
             ))}
           </div>
         </Grid2>
 
+      </Grid2>
+
+      <Grid2 container spacing={1} sx={{ mt: 4 }}>
+        {loadingTiemposPorProyecto ? (
+          <Grid2 item xs={12} sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress />
+          </Grid2>
+        ) : (
+          <TblRegistrosTiemposPorProyecto registros={registrosTiemposPorProyecto} />
+        )}
       </Grid2>
 
     </>
