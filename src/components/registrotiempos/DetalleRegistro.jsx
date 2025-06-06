@@ -44,6 +44,35 @@ const DetalleRegistro = ({
   const [openConfirm, setOpenConfirm] = useState(false);
   const [accionConfirm, setAccionConfirm] = useState(""); // "cancelar" o "limpiar"
 
+  //INICIO. variables para paginación y funciones.
+  //const [page, setPage] = useState(0);
+
+  const [paginadorRequest, setPaginadorRequest] = useState({
+    titulo: "",
+    numeroPagina: 0,
+    cantidadElementos: 10,
+  });
+  const [paginadorResponse, setPaginadorResponse] = useState({
+    listaRecords: [],
+    totalRecords: 0,
+    numeroPaginas: 0,
+  });
+
+  const handlePageChange = (event, nuevaPagina) => {
+    setPaginadorRequest((anterior) => ({
+      ...anterior,
+      numeroPagina: parseInt(nuevaPagina),
+    }));
+  };
+  const handleRowsPerPageChange = (event) => {
+    setPaginadorRequest((anterior) => ({
+      ...anterior,
+      cantidadElementos: parseInt(event.target.value),
+      numeroPagina: 0,
+    }));
+  };
+  //FIN. variables para paginación y funciones.
+
   const [meses, setMeses] = useState(
     Array.from({ length: 12 }, (_, i) => ({
       id: i + 1,
@@ -60,7 +89,7 @@ const DetalleRegistro = ({
   const [{ sesionUsuario }, dispatch] = useStateValue();
 
   // Variables para almacenar los datos de la API Registros Tiempos por Proyecto
-  const [registrosTiemposPorProyecto, setRegistrosTiemposPorProyecto] = useState([]);
+  //const [registrosTiemposPorProyecto, setRegistrosTiemposPorProyecto] = useState([]);
 
   useEffect(() => {
 
@@ -69,11 +98,13 @@ const DetalleRegistro = ({
       const msgError = "Ocurrió un error al obtener los registros de tiempos por proyecto.";
 
       try {
+        const paginaVariant = paginadorRequest.numeroPagina + 1;
         const usuario = sesionUsuario?.usuario;
+
         const payload = {
           usuarioId: usuario?.usuarioId || "",
-          numeroPagina: 1,
-          cantidadElementos: 10,
+          numeroPagina: paginaVariant,
+          cantidadElementos: paginadorRequest.cantidadElementos,
           descripcion: "",
           solucionId: null,
           clienteId: null,
@@ -85,12 +116,17 @@ const DetalleRegistro = ({
         const response = await obtenerRegistrosPaginadoAction(payload);
 
         if (response && response.data && response.status === 200 && response.statusText === "OK") {
+          //console.log("ResponseData:", response.data);
 
-          if (response.data && response.data.length > 0) {
+          const listaRecords = response?.data?.listaRecords || [];
+          setPaginadorResponse(response.data);
 
+          if (response.data && listaRecords.length > 0) {
             //console.log("cuentas Horas:", response.data[0].cuentasHoras);
-            const cuentasHoras = response.data[0]?.cuentasHoras || [];
-            const totalGeneral = response.data[0]?.totalGeneral || 0;
+
+            const cuentasHoras = listaRecords[0]?.cuentasHoras || [];
+            const totalGeneral = listaRecords[0]?.totalGeneral || 0;
+
             // Copia el array meses
             const mesesActualizados = meses.map(mes => {
               // Busca si hay un registro de horas para este mes
@@ -104,15 +140,31 @@ const DetalleRegistro = ({
             setMeses(mesesActualizados);
             setTotalGeneral(totalGeneral);
 
-            setRegistrosTiemposPorProyecto(response.data.map(item => ({
-              registroId: item.registroId,
+            //console.log("paginadorResponse", paginadorResponse);
+            // Hacer el map para transformar los registros
+            const listaRecordsTransformada = listaRecords.map(item => ({
+              ...item,
               mes: meses.find(m => m.id === item.mes)?.nombre || item.mes,
-              cliente: item.cliente.nombre,
-              solucion: item.solucion.nombre,
-              proyecto: item.descripcion,
-              actividad: item.actividad.nombre,
-              horas: item.horas
-            })));
+              cliente: item.cliente?.nombre || "",
+              solucion: item.solucion?.nombre || "",
+              actividad: item.actividad?.nombre || "",
+              horas: item.horas || 0,
+            }));
+
+            // actualizar el paginadorResponse con la lista transformada
+            setPaginadorResponse({
+              ...response.data,
+              listaRecords: listaRecordsTransformada
+            });
+            // setRegistrosTiemposPorProyecto(listaRecords.map(item => ({
+            //   registroId: item.registroId,
+            //   mes: meses.find(m => m.id === item.mes)?.nombre || item.mes,
+            //   cliente: item.cliente.nombre,
+            //   solucion: item.solucion.nombre,
+            //   proyecto: item.descripcion,
+            //   actividad: item.actividad.nombre,
+            //   horas: item.horas
+            // })));
           }
 
         } else {
@@ -128,7 +180,7 @@ const DetalleRegistro = ({
         }
 
       } catch (error) {
-        console.log("Error Catch", error)
+        console.error("Error Catch", error)
         const errorMessage = error?.data?.errors?.msg || msgError;
         dispatch({
           type: "OPEN_SNACKBAR",
@@ -146,7 +198,7 @@ const DetalleRegistro = ({
 
     obtenerRegistrosTiemposPorProyecto();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sesionUsuario]);
+  }, [sesionUsuario, paginadorRequest]);
 
   const handleClickAggNuevoRenglon = e => {
     e.preventDefault();
@@ -439,9 +491,7 @@ const DetalleRegistro = ({
             actividades={listadoActividades}
             handleRowChange={handleRowChange}
             handleRemoveRow={handleRemoveRow}
-            //errors={showErrors ? getRowErrors(row) : {}} // <--- Solo muestra errores si showErrors es true
             errors={fieldErrors[idx] || {}} // <-- errores solo para ese renglón
-          //usuarioSesion={usuarioSesion}
           />
         ))}
 
@@ -601,11 +651,29 @@ const DetalleRegistro = ({
 
       <Grid2 container spacing={1} sx={{ mt: 4 }}>
         {loadingTiemposPorProyecto ? (
-          <Grid2 item xs={12} sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress />
+          <Grid2
+            xs={12}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: 160, // Ajusta según la altura de tu tabla
+              width: "100%",
+            }}
+          >
+            <Grid2 item>
+              <CircularProgress />
+            </Grid2>
           </Grid2>
         ) : (
-          <TblRegistrosTiemposPorProyecto registros={registrosTiemposPorProyecto} />
+          <TblRegistrosTiemposPorProyecto
+            registros={paginadorResponse.listaRecords}
+            count={paginadorResponse.totalRecords}
+            rowsPerPage={paginadorRequest.cantidadElementos}
+            page={paginadorRequest.numeroPagina}
+            handlePageChange={handlePageChange}
+            handleRowsPerPageChange={handleRowsPerPageChange}
+          />
         )}
       </Grid2>
 
