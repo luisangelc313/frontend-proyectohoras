@@ -186,112 +186,8 @@ const DetalleRegistro = ({
 
   useEffect(() => {
 
-    const obtenerRegistrosTiemposPorProyecto = async () => {
-      setLoadingTiemposPorProyecto(true);
-      const msgError = "Ocurrió un error al obtener los registros de tiempos por proyecto.";
+    obtenerRegistrosTiemposPorProyecto(anioResumen.year());
 
-      try {
-        const paginaVariant = paginadorRequest.numeroPagina + 1;
-        const usuario = sesionUsuario?.usuario;
-
-        const payload = {
-          usuarioId: usuario?.usuarioId || "",
-          numeroPagina: paginaVariant,
-          cantidadElementos: paginadorRequest.cantidadElementos,
-          descripcion: "",
-          solucionId: null,
-          clienteId: null,
-          actividadId: null,
-          fechaInicio: null,
-          fechaFin: null,
-          periodo: anioResumen.year(),
-        };
-
-        const response = await obtenerRegistrosPaginadoAction(payload);
-
-        if (response && response.data && response.status === 200 && response.statusText === "OK") {
-          //console.log("ResponseData:", response.data);
-
-          const listaRecords = response?.data?.listaRecords || [];
-          setPaginadorResponse(response.data);
-
-          if (response.data && listaRecords.length > 0) {
-            //console.log("cuentas Horas:", response.data[0].cuentasHoras);
-
-            const cuentasHoras = listaRecords[0]?.cuentasHoras || [];
-            const totalGeneral = listaRecords[0]?.totalGeneral || 0;
-
-            // Copia el array meses
-            const mesesActualizados = meses.map(mes => {
-              // Busca si hay un registro de horas para este mes
-              const encontrado = cuentasHoras.find(c => c.mesID === mes.id);
-              return {
-                ...mes,
-                hora: encontrado ? encontrado.horas : 0
-              };
-            });
-
-            setMeses(mesesActualizados);
-            setTotalGeneral(totalGeneral);
-
-            //console.log("paginadorResponse", paginadorResponse);
-            // Hacer el map para transformar los registros
-            const listaRecordsTransformada = listaRecords.map(item => ({
-              ...item,
-              mes: meses.find(m => m.id === item.mes)?.nombre || item.mes,
-              cliente: item.cliente?.nombre || "",
-              solucion: item.solucion?.nombre || "",
-              actividad: item.actividad?.nombre || "",
-              proyecto: item.descripcion || "",
-              horas: item.horas || 0,
-            }));
-
-            // actualizar el paginadorResponse con la lista transformada
-            setPaginadorResponse({
-              ...response.data,
-              listaRecords: listaRecordsTransformada
-            });
-            // setRegistrosTiemposPorProyecto(listaRecords.map(item => ({
-            //   registroId: item.registroId,
-            //   mes: meses.find(m => m.id === item.mes)?.nombre || item.mes,
-            //   cliente: item.cliente.nombre,
-            //   solucion: item.solucion.nombre,
-            //   proyecto: item.descripcion,
-            //   actividad: item.actividad.nombre,
-            //   horas: item.horas
-            // })));
-          }
-
-        } else {
-          dispatch({
-            type: "OPEN_SNACKBAR",
-            openMensaje: {
-              open: true,
-              mensaje: msgError,
-              severity: "error",
-            },
-          });
-
-        }
-
-      } catch (error) {
-        console.error("Error Catch", error)
-        const errorMessage = error?.data?.errors?.msg || msgError;
-        dispatch({
-          type: "OPEN_SNACKBAR",
-          openMensaje: {
-            open: true,
-            mensaje: errorMessage,
-            severity: "error",
-          },
-        });
-
-      } finally {
-        setLoadingTiemposPorProyecto(false);
-      }
-    }
-
-    obtenerRegistrosTiemposPorProyecto();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sesionUsuario, paginadorRequest]);
 
@@ -744,6 +640,7 @@ const DetalleRegistro = ({
             <Typography variant="h6" gutterBottom>
               Resumen
             </Typography>
+            {/* Datepicker de Resumen "Periodo" */}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 views={['year']}
@@ -751,6 +648,9 @@ const DetalleRegistro = ({
                 value={anioResumen}
                 onChange={(nuevoValor) => {
                   setAnioResumen(nuevoValor);
+                  if (nuevoValor) {
+                    obtenerRegistrosTiemposPorProyecto(nuevoValor.year());
+                  }
                 }}
                 sx={{ width: 120 }}
                 slotProps={{ textField: { size: 'small' } }}
