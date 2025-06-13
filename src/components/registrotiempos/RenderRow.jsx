@@ -80,7 +80,7 @@ const RenderRow = ({
                         title={
                             row.cliente
                                 ? (
-                                    (clientes.find(c => c.clienteId === row.cliente)?.nombre?.length > 9)
+                                    (clientes.find(c => c.clienteId === row.cliente)?.nombre?.length > 15)
                                         ? clientes.find(c => c.clienteId === row.cliente)?.nombre
                                         : ""
                                 )
@@ -88,7 +88,7 @@ const RenderRow = ({
                         }
                         disableHoverListener={
                             !row.cliente ||
-                            !(clientes.find(c => c.clienteId === row.cliente)?.nombre?.length > 9)
+                            !(clientes.find(c => c.clienteId === row.cliente)?.nombre?.length > 15)
                         }
                         arrow
                         placement="top"
@@ -132,7 +132,7 @@ const RenderRow = ({
                         title={
                             row.solucion
                                 ? (
-                                    (soluciones.find(c => c.solucionId === row.solucion)?.nombre?.length > 9)
+                                    (soluciones.find(c => c.solucionId === row.solucion)?.nombre?.length > 15)
                                         ? soluciones.find(c => c.solucionId === row.solucion)?.nombre
                                         : ""
                                 )
@@ -140,7 +140,7 @@ const RenderRow = ({
                         }
                         disableHoverListener={
                             !row.solucion ||
-                            !(soluciones.find(c => c.solucionId === row.solucion)?.nombre?.length > 9)
+                            !(soluciones.find(c => c.solucionId === row.solucion)?.nombre?.length > 15)
                         }
                         arrow
                         placement="top"
@@ -207,7 +207,7 @@ const RenderRow = ({
                         title={
                             row.actividad
                                 ? (
-                                    (actividades.find(c => c.actividadId === row.actividad)?.nombre?.length > 9)
+                                    (actividades.find(c => c.actividadId === row.actividad)?.nombre?.length > 17)
                                         ? actividades.find(c => c.actividadId === row.actividad)?.nombre
                                         : ""
                                 )
@@ -215,7 +215,7 @@ const RenderRow = ({
                         }
                         disableHoverListener={
                             !row.actividad ||
-                            !(actividades.find(c => c.actividadId === row.actividad)?.nombre?.length > 9)
+                            !(actividades.find(c => c.actividadId === row.actividad)?.nombre?.length > 17)
                         }
                         arrow
                         placement="top"

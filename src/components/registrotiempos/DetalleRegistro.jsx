@@ -17,6 +17,11 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import CircularProgress from "@mui/material/CircularProgress";
 
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+
 import style from "../Tool/style";
 import { HttpStatus } from "../../utils/HttpStatus";
 import RenderRow from './RenderRow';
@@ -38,6 +43,9 @@ const DetalleRegistro = ({
   const navigate = useNavigate();
   //Estado para los renglones dinámicos
   const [rows, setRows] = useState([]); // Empieza con un renglón vacío
+
+  const [anioSeleccionado, setAnioSeleccionado] = useState(dayjs());
+  const [anioResumen, setAnioResumen] = useState(dayjs());
 
   const [, setAbandonar] = useState(false);
   const [totalGeneral, setTotalGeneral] = useState(0);
@@ -88,8 +96,93 @@ const DetalleRegistro = ({
   const [loadingTiemposPorProyecto, setLoadingTiemposPorProyecto] = useState(false);
   const [{ sesionUsuario }, dispatch] = useStateValue();
 
-  // Variables para almacenar los datos de la API Registros Tiempos por Proyecto
-  //const [registrosTiemposPorProyecto, setRegistrosTiemposPorProyecto] = useState([]);
+  const obtenerRegistrosTiemposPorProyecto = async (periodo) => {
+    setLoadingTiemposPorProyecto(true);
+    const msgError = "Ocurrió un error al obtener los registros de tiempos por proyecto.";
+
+    try {
+      const paginaVariant = paginadorRequest.numeroPagina + 1;
+      const usuario = sesionUsuario?.usuario;
+
+      const payload = {
+        usuarioId: usuario?.usuarioId || "",
+        numeroPagina: paginaVariant,
+        cantidadElementos: paginadorRequest.cantidadElementos,
+        descripcion: "",
+        solucionId: null,
+        clienteId: null,
+        actividadId: null,
+        fechaInicio: null,
+        fechaFin: null,
+        periodo: periodo, // <-- aquí usas el periodo recibido
+      };
+
+      const response = await obtenerRegistrosPaginadoAction(payload);
+
+      if (response && response.data && response.status === 200 && response.statusText === "OK") {
+        // ...tu lógica de actualización de estados...
+        const listaRecords = response?.data?.listaRecords || [];
+        setPaginadorResponse(response.data);
+
+        if (response.data && listaRecords.length > 0) {
+          // ...actualiza meses, totalGeneral, etc...
+          // ...transforma listaRecords si es necesario...
+          const cuentasHoras = listaRecords[0]?.cuentasHoras || [];
+          const totalGeneral = listaRecords[0]?.totalGeneral || 0;
+
+          const mesesActualizados = meses.map(mes => {
+            const encontrado = cuentasHoras.find(c => c.mesID === mes.id);
+            return {
+              ...mes,
+              hora: encontrado ? encontrado.horas : 0
+            };
+          });
+
+          setMeses(mesesActualizados);
+          setTotalGeneral(totalGeneral);
+
+          const listaRecordsTransformada = listaRecords.map(item => ({
+            ...item,
+            mes: meses.find(m => m.id === item.mes)?.nombre || item.mes,
+            cliente: item.cliente?.nombre || "",
+            solucion: item.solucion?.nombre || "",
+            actividad: item.actividad?.nombre || "",
+            proyecto: item.descripcion || "",
+            horas: item.horas || 0,
+          }));
+
+          setPaginadorResponse({
+            ...response.data,
+            listaRecords: listaRecordsTransformada
+          });
+        }
+
+      } else {
+        dispatch({
+          type: "OPEN_SNACKBAR",
+          openMensaje: {
+            open: true,
+            mensaje: msgError,
+            severity: "error",
+          },
+        });
+      }
+
+    } catch (error) {
+      console.error("Error Catch", error)
+      const errorMessage = error?.data?.errors?.msg || msgError;
+      dispatch({
+        type: "OPEN_SNACKBAR",
+        openMensaje: {
+          open: true,
+          mensaje: errorMessage,
+          severity: "error",
+        },
+      });
+    } finally {
+      setLoadingTiemposPorProyecto(false);
+    }
+  };
 
   useEffect(() => {
 
@@ -110,7 +203,8 @@ const DetalleRegistro = ({
           clienteId: null,
           actividadId: null,
           fechaInicio: null,
-          fechaFin: null
+          fechaFin: null,
+          periodo: anioResumen.year(),
         };
 
         const response = await obtenerRegistrosPaginadoAction(payload);
@@ -148,6 +242,7 @@ const DetalleRegistro = ({
               cliente: item.cliente?.nombre || "",
               solucion: item.solucion?.nombre || "",
               actividad: item.actividad?.nombre || "",
+              proyecto: item.descripcion || "",
               horas: item.horas || 0,
             }));
 
@@ -275,7 +370,6 @@ const DetalleRegistro = ({
     setFieldErrors(newFieldErrors);
     setLoading(true); // <-- Activa el loading
 
-
     if (hasError) {
       //setShowErrors(true); // <-- Mostrar errores
       dispatch({
@@ -302,19 +396,81 @@ const DetalleRegistro = ({
       solucionId: row.solucion,
       proyecto: row.proyecto,
       actividadId: row.actividad,
-      horas: row.horas
+      horas: row.horas,
+      periodo: anioSeleccionado.year() // Asegúrate de enviar el año seleccionado
     }));
 
-    // console.log("Datos a guardar:", myRequest);
+    // console.log("Datos a guardar:", myRequest[0]);
     // setLoading(false);
     // return;
 
     try {
-      const payload = { registros: myRequest };
+      const paginaVariant = paginadorRequest.numeroPagina + 1;
+      const payload = {
+        registros: myRequest,
+        numeroPagina: paginaVariant,
+        cantidadElementos: paginadorRequest.cantidadElementos
+      };
+
       const response = await guardarTiemposProyectoAction(payload);
       let { status, statusText } = response;
 
       if (status === HttpStatus.OK && statusText === "OK") {
+
+        const listaRecords = response?.data?.listaRecords || [];
+        setPaginadorResponse(response.data);
+
+        if (response.data && listaRecords.length > 0) {
+          //console.log("cuentas Horas:", response.data[0].cuentasHoras);
+
+          const cuentasHoras = listaRecords[0]?.cuentasHoras || [];
+          const totalGeneral = listaRecords[0]?.totalGeneral || 0;
+
+          // Copia el array meses
+          const mesesActualizados = meses.map(mes => {
+            // Busca si hay un registro de horas para este mes
+            const encontrado = cuentasHoras.find(c => c.mesID === mes.id);
+            return {
+              ...mes,
+              hora: encontrado ? encontrado.horas : 0
+            };
+          });
+
+          setMeses(mesesActualizados);
+          setTotalGeneral(totalGeneral);
+
+          //console.log("paginadorResponse", paginadorResponse);
+          //Hacer el map para transformar los registros
+          const listaRecordsTransformada = listaRecords.map(item => ({
+            ...item,
+            mes: meses.find(m => m.id === item.mes)?.nombre || item.mes,
+            cliente: item.cliente?.nombre || "",
+            solucion: item.solucion?.nombre || "",
+            actividad: item.actividad?.nombre || "",
+            proyecto: item.descripcion || "",
+            horas: item.horas || 0,
+          }));
+
+          //actualizar el paginadorResponse con la lista transformada
+          setPaginadorResponse({
+            ...response.data,
+            listaRecords: listaRecordsTransformada
+          });
+        }
+
+        //Limpia los renglones después de guardar
+        setRows([{
+          id: Date.now(),
+          usuarioId: usuarioSesion?.usuarioId || "",
+          mes: "",
+          clienteId: "",
+          solucionId: "",
+          proyecto: "",
+          actividadId: "",
+          horas: ""
+        }]);
+        setFieldErrors({});
+
         dispatch({
           type: "OPEN_SNACKBAR",
           openMensaje: {
@@ -464,19 +620,35 @@ const DetalleRegistro = ({
             Abandonar Captura
           </Button>
         </Box>
-        <Typography variant="h6" gutterBottom>
-          <span
-            style={{
-              fontSize: 16,
-              fontWeight: "500",
-              fontFamily: "Arial",
-              captionSide: "bottom",
-              marginRight: 5,
-            }}>Usuario: </span>
-          {usuarioSesion && usuarioSesion.username}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, mt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: "500",
+                fontFamily: "Arial",
+                captionSide: "bottom",
+                marginRight: 5,
+              }}>Usuario: </span>
+            {usuarioSesion && usuarioSesion.username}
+          </Typography>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              views={['year']}
+              label="Periodo"
+              value={anioSeleccionado}
+              onChange={(nuevoValor) => {
+                setAnioSeleccionado(nuevoValor);
+                //console.log("Año seleccionado:", nuevoValor ? nuevoValor.year() : null);
+              }}
+              sx={{ width: 120 }}
+              slotProps={{ textField: { size: 'small' } }}
+              maxDate={dayjs().endOf('year')}
+            />
+          </LocalizationProvider>
+        </Box>
 
-      </Box>
+      </Box >
       <Divider sx={{ my: 3 }} />
       {/* Renglón de captura */}
 
@@ -566,18 +738,33 @@ const DetalleRegistro = ({
       </form>
 
       {/* Resumen de horas */}
-      <Grid2 container spacing={1} sx={{ mt: 2 }}>
-        <Grid2 size={{ xs: 6, md: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Resumen
-          </Typography>
+      <Grid2 container spacing={1} sx={{ mt: 3 }}>
+        <Grid2 size={{ xs: 6, md: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Resumen
+            </Typography>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                views={['year']}
+                label="Periodo"
+                value={anioResumen}
+                onChange={(nuevoValor) => {
+                  setAnioResumen(nuevoValor);
+                }}
+                sx={{ width: 120 }}
+                slotProps={{ textField: { size: 'small' } }}
+                maxDate={dayjs().endOf('year')}
+              />
+            </LocalizationProvider>
+          </Box>
         </Grid2>
         <Grid2 size={{ xs: 6, md: 2 }}>
           <Typography variant="body1" gutterBottom>
             Cuenta de Horas
           </Typography>
         </Grid2>
-        <Grid2 size={{ xs: 6, md: 8 }}>
+        <Grid2 size={{ xs: 6, md: 6 }}>
           {/* botones de exportación para Excel y PDF */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Tooltip title="Exportar a Excel">
