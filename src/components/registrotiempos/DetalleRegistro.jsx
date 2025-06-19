@@ -27,11 +27,15 @@ import { HttpStatus } from "../../utils/HttpStatus";
 import RenderRow from './RenderRow';
 import { useStateValue } from "../../context/store";
 import {
+  exportarRegistrosPDFAction
+} from "../../actions/ExportarDocumentoAction";
+import {
   guardarTiemposProyectoAction,
   obtenerRegistrosPaginadoAction,
 } from "../../actions/RegistroTiemposAction";
 import TblRegistrosTiemposPorProyecto from "./TblRegistrosTiemposPorProyecto";
 import ConfirmDialog from "./hooks/ConfirmDialog";
+import { ConvertirBase64PDF } from "../../utils/ConvertirBase64ToPDF";
 
 
 const DetalleRegistro = ({
@@ -94,6 +98,7 @@ const DetalleRegistro = ({
 
   const [loading, setLoading] = useState(false);
   const [loadingTiemposPorProyecto, setLoadingTiemposPorProyecto] = useState(false);
+  const [loadingPDF, setLoadingPDF] = useState(false);
   const [{ sesionUsuario }, dispatch] = useStateValue();
 
   const obtenerRegistrosTiemposPorProyecto = async (periodo) => {
@@ -237,8 +242,63 @@ const DetalleRegistro = ({
     // Lógica para exportar a Excel
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async e => {
     // Lógica para exportar a PDF
+    e.preventDefault();
+    setLoadingPDF(true);
+
+    try {
+      const payload = {
+        usuarioId: usuarioSesion.usuarioId || "",
+        periodo: anioResumen.year() || 0, // enviar el año seleccionado
+      }
+      const response = await exportarRegistrosPDFAction(payload);
+      let { status, statusText } = response;
+
+      if (status === HttpStatus.OK && statusText === "OK") {
+
+        const base64String = response.data.documentoData || "";
+        const nombreArchivo = response.data.nombreDocumento || `HRS X PROY ${anioResumen.year()} - ${usuarioSesion.nombreCompleto}.pdf`;
+        ConvertirBase64PDF(base64String, nombreArchivo);
+
+        dispatch({
+          type: "OPEN_SNACKBAR",
+          openMensaje: {
+            open: true,
+            mensaje: "PDF generado con éxito.",
+            severity: "success",
+          },
+        });
+
+      } else {
+        dispatch({
+          type: "OPEN_SNACKBAR",
+          openMensaje: {
+            open: true,
+            mensaje: "Ocurrió un error al exportar el PDF.",
+            severity: "error",
+            vertical: "bottom",
+            horizontal: "left"
+          },
+        });
+      }
+
+    } catch (error) {
+      const errorMessage = error?.data?.errors?.msg || "Ocurrió un error al exportar el PDF.";
+      dispatch({
+        type: "OPEN_SNACKBAR",
+        openMensaje: {
+          open: true,
+          mensaje: errorMessage,
+          severity: "error",
+          vertical: "bottom",
+          horizontal: "left"
+        },
+      });
+
+    } finally {
+      setLoadingPDF(false);
+    }
   };
 
   // Campos obligatorios
@@ -697,7 +757,7 @@ const DetalleRegistro = ({
                   },
                 }}
               >
-                <PictureAsPdfIcon />
+                {loadingPDF ? <CircularProgress size={24} color="inherit" /> : <PictureAsPdfIcon />}
               </IconButton>
             </Tooltip>
           </div>

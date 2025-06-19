@@ -1,5 +1,9 @@
 import HttpCliente from "../services/HttpCliente";
-//import axios from 'axios';
+import axios from "axios";
+
+const instancia = axios.create();
+instancia.CancelToken = axios.CancelToken;
+instancia.isCancel = axios.isCancel;
 
 
 export const obtenerCapturaInicialAction = () => {
@@ -22,6 +26,7 @@ export const guardarTiemposProyectoAction = data => {
             .catch((error) => reject(error.response));
     });
 }
+
 
 export const obtenerRegistrosPaginadoAction = data => {
     return new Promise((resolve, reject) => {
