@@ -27,15 +27,20 @@ import { HttpStatus } from "../../utils/HttpStatus";
 import RenderRow from './RenderRow';
 import { useStateValue } from "../../context/store";
 import {
-  exportarRegistrosPDFAction
+  exportarRegistrosPDFAction,
+  exportarRegistrosEXCELAction,
 } from "../../actions/ExportarDocumentoAction";
 import {
   guardarTiemposProyectoAction,
   obtenerRegistrosPaginadoAction,
 } from "../../actions/RegistroTiemposAction";
+import {
+  ConfirmDialog,
+  ConfirmDialogFiltrosExpArchivo,
+} from "./Confirm";
 import TblRegistrosTiemposPorProyecto from "./TblRegistrosTiemposPorProyecto";
-import ConfirmDialog from "./hooks/ConfirmDialog";
 import { ConvertirBase64PDF } from "../../utils/ConvertirBase64ToPDF";
+import FiltrosExportacion from './hooks/FiltrosExportacion';
 
 
 const DetalleRegistro = ({
@@ -99,6 +104,7 @@ const DetalleRegistro = ({
   const [loading, setLoading] = useState(false);
   const [loadingTiemposPorProyecto, setLoadingTiemposPorProyecto] = useState(false);
   const [loadingPDF, setLoadingPDF] = useState(false);
+  const [loadingExcel, setLoadingExcel] = useState(false);
   const [{ sesionUsuario }, dispatch] = useStateValue();
 
   const obtenerRegistrosTiemposPorProyecto = async (periodo) => {
@@ -238,14 +244,72 @@ const DetalleRegistro = ({
     setRows(rows => rows.filter((_, idx) => idx !== index));
   };
 
-  const handleExportExcel = () => {
+
+  const fnExportExcel = async () => {
     // Lógica para exportar a Excel
+    setLoadingExcel(true);
+
+    let msjError = "Ocurrió un error al exportar a Excel. Intente de nuevo por favor.";
+
+    try {
+      const payload = {
+        usuarioId: usuarioSesion.usuarioId || "",
+        periodo: anioResumen.year() || 0, // enviar el año seleccionado
+      }
+      const response = await exportarRegistrosEXCELAction(payload);
+      let { status, statusText } = response;
+
+      if (status === HttpStatus.OK && statusText === "OK") {
+
+        const base64String = response.data.documentoData || "";
+        const nombreArchivo = response.data.nombreDocumento || `HRS X PROY ${anioResumen.year()} - ${usuarioSesion.nombreCompleto}.pdf`;
+        ConvertirBase64PDF(base64String, nombreArchivo, false); // false para Excel
+
+        dispatch({
+          type: "OPEN_SNACKBAR",
+          openMensaje: {
+            open: true,
+            mensaje: "Archivo generado con éxito.",
+            severity: "success",
+          },
+        });
+
+      } else {
+        dispatch({
+          type: "OPEN_SNACKBAR",
+          openMensaje: {
+            open: true,
+            mensaje: msjError,
+            severity: "error",
+            vertical: "bottom",
+            horizontal: "left"
+          },
+        });
+      }
+
+    } catch (error) {
+      const errorMessage = error?.data?.errors?.msg || msjError;
+      dispatch({
+        type: "OPEN_SNACKBAR",
+        openMensaje: {
+          open: true,
+          mensaje: errorMessage,
+          severity: "error",
+          vertical: "bottom",
+          horizontal: "left"
+        },
+      });
+
+    } finally {
+      setLoadingExcel(false);
+    }
   };
 
-  const handleExportPDF = async e => {
+  const fnExportPDF = async () => {
     // Lógica para exportar a PDF
-    e.preventDefault();
     setLoadingPDF(true);
+
+    let msjError = "Ocurrió un error al exportar a PDF. Intente de nuevo por favor.";
 
     try {
       const payload = {
@@ -265,7 +329,7 @@ const DetalleRegistro = ({
           type: "OPEN_SNACKBAR",
           openMensaje: {
             open: true,
-            mensaje: "PDF generado con éxito.",
+            mensaje: "Archivo generado con éxito.",
             severity: "success",
           },
         });
@@ -275,7 +339,7 @@ const DetalleRegistro = ({
           type: "OPEN_SNACKBAR",
           openMensaje: {
             open: true,
-            mensaje: "Ocurrió un error al exportar el PDF.",
+            mensaje: msjError,
             severity: "error",
             vertical: "bottom",
             horizontal: "left"
@@ -284,7 +348,7 @@ const DetalleRegistro = ({
       }
 
     } catch (error) {
-      const errorMessage = error?.data?.errors?.msg || "Ocurrió un error al exportar el PDF.";
+      const errorMessage = error?.data?.errors?.msg || msjError;
       dispatch({
         type: "OPEN_SNACKBAR",
         openMensaje: {
@@ -300,6 +364,35 @@ const DetalleRegistro = ({
       setLoadingPDF(false);
     }
   };
+
+  // Variable para abrir el diálogo de filtros de exportación.
+  const [openDialogFiltrosExpArchivo, setOpenDialogFiltrosExpArchivo] = useState(false);
+  const [tipoExportacion, setTipoExportacion] = useState(null);
+
+  const handleOpenDialogFiltrosExpArchivo = (tipo) => {
+    setTipoExportacion(tipo);
+    setOpenDialogFiltrosExpArchivo(true);
+  };
+
+  const handleCloseDialogFiltrosExpArchivo = () => {
+    setOpenDialogFiltrosExpArchivo(false);
+  };
+
+  // Cuando el usuario confirme en el diálogo:
+  const handleConfirmDialogFiltrosExpArchivo = e => {
+    e.preventDefault();
+
+    // Dependiendo del tipo de exportación, llama a la función correspondiente
+    if (tipoExportacion === "excel") {
+      fnExportExcel();
+
+    } else if (tipoExportacion === "pdf") {
+      fnExportPDF();
+    }
+
+    setOpenDialogFiltrosExpArchivo(false);
+  };
+
 
   // Campos obligatorios
   const camposObligatorios = ["mes", "cliente", "solucion", "proyecto", "actividad", "horas"];
@@ -338,6 +431,8 @@ const DetalleRegistro = ({
           horizontal: "right",
         },
       });
+
+      setLoading(false); // <-- Desactiva el loading
       return;
     }
 
@@ -724,14 +819,14 @@ const DetalleRegistro = ({
             Cuenta de Horas
           </Typography>
         </Grid2>
+        {/* botones de exportación para EXCEL y PDF */}
         <Grid2 size={{ xs: 6, md: 6 }}>
-          {/* botones de exportación para Excel y PDF */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Tooltip title="Exportar a Excel">
               <IconButton
                 color="success"
                 size="large"
-                onClick={handleExportExcel}
+                onClick={() => handleOpenDialogFiltrosExpArchivo("excel")}
                 sx={{
                   border: '2px solid transparent',
                   transition: 'border-color 0.2s',
@@ -740,14 +835,14 @@ const DetalleRegistro = ({
                   },
                 }}
               >
-                <FileDownloadOutlinedIcon />
+                {loadingExcel ? <CircularProgress size={24} color="inherit" /> : <FileDownloadOutlinedIcon />}
               </IconButton>
             </Tooltip>
             <Tooltip title="Exportar a PDF">
               <IconButton
                 color="error"
                 size="large"
-                onClick={handleExportPDF}
+                onClick={() => handleOpenDialogFiltrosExpArchivo("pdf")}
                 sx={{
                   border: '2px solid transparent',
                   transition: 'border-color 0.2s',
@@ -850,6 +945,23 @@ const DetalleRegistro = ({
           ? "220px" : ""
         }
       />
+
+      {/* Dialog para aplicar filtros a exportación de archivos */}
+      <ConfirmDialogFiltrosExpArchivo
+        open={openDialogFiltrosExpArchivo}
+        title={"Filtros Exportación de Archivo"}
+        content={
+          <FiltrosExportacion
+            clientes={listadoClientes}
+            soluciones={listadoSoluciones}
+            actividades={listadoActividades} />
+        }
+        onClose={handleCloseDialogFiltrosExpArchivo}
+        onConfirm={handleConfirmDialogFiltrosExpArchivo}
+        width={"600px"}
+        height={"330px"}
+      />
+
     </>
   )
 }

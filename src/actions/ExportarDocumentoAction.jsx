@@ -21,3 +21,16 @@ export const exportarRegistrosPDFAction = requestData => {
     });
 };
 
+
+export const exportarRegistrosEXCELAction = requestData => {
+    return new Promise((resolve, reject) => {
+        HttpCliente.post(`exportardocumento/exportarexcel`, requestData, {
+            responseType: 'blob', // <- esto es clave (almacenamiento de archivos binarios grander)
+        })
+            .then((response) => {
+                resolve(response);
+            })
+            .catch((error) => reject(error.response));
+    });
+};
+
