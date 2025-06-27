@@ -35,7 +35,7 @@ const ConfirmDialogFiltrosExpArchivo = ({
                 {content}
             </DialogContent>
             <Divider sx={{ my: 1 }} />
-            <DialogActions>
+            <DialogActions sx={{ mb: 1 }}>
                 <Button onClick={onClose} color="error" variant="outlined">
                     Cancelar
                 </Button>

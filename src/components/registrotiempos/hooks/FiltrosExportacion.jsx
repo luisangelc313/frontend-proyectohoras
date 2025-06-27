@@ -2,6 +2,7 @@ import {
     Autocomplete,
     Divider,
     FormControl,
+    FormHelperText,
     Grid2,
     InputLabel,
     MenuItem,
@@ -9,24 +10,37 @@ import {
     TextField,
     Tooltip
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 
 const FiltrosExportacion = ({
     clientes,
     soluciones,
     actividades,
+    onFiltrosChange, // <-- recibe el callback
+    errorFiltro, // <-- recibe el error
+    onLimpiarErrorFiltro,
 }) => {
 
     const arrTipoFiltros = [
         { value: 1, text: "Todos" },
-        { value: 2, text: "Agregar filtrado" }
+        { value: 2, text: "Aplicar filtro" }
     ];
     const [valorFiltro, setValorFiltro] = useState("");
 
     const handleChangeParametrosFiltro = e => {
         setValorFiltro(e.target.value);
-        console.log("Valor del filtro seleccionado:", e.target.value);
+        //console.log("Valor del filtro seleccionado:", e.target.value);
+
+        setClienteSeleccionado(null);
+        setSolucionSeleccionado(null);
+        setActividadSeleccionada(null);
+        setMesSeleccionado("");
+
+        // Si selecciona una opción válida, limpiar el error
+        if (onLimpiarErrorFiltro && e.target.value) {
+            onLimpiarErrorFiltro();
+        }
     };
 
 
@@ -34,7 +48,7 @@ const FiltrosExportacion = ({
     const [meses] = useState(
         Array.from({ length: 12 }, (_, i) => ({
             id: i + 1,
-            nombre: new Date(0, i).toLocaleString('es-ES', { month: 'long' }).toUpperCase(),//.replace(/^\w/, c => c.toUpperCase())
+            nombre: new Date(0, i).toLocaleString('es-ES', { month: 'long' }).toUpperCase(),
             hora: 0
         }))
     );
@@ -47,12 +61,31 @@ const FiltrosExportacion = ({
     const [actividadSeleccionada, setActividadSeleccionada] = useState(null);
 
 
+    useEffect(() => {
+        if (onFiltrosChange) {
+            onFiltrosChange({
+                cliente: clienteSeleccionado,
+                solucion: solucionSeleccionado,
+                actividad: actividadSeleccionada,
+                mes: mesSeleccionado,
+                tipoFiltro: valorFiltro
+            });
+        }
+    }, [
+        clienteSeleccionado,
+        solucionSeleccionado,
+        actividadSeleccionada,
+        mesSeleccionado,
+        valorFiltro,
+        onFiltrosChange
+    ]);
+
     return (
         <>
             <Grid2 container>
                 {/* Seleccione Opción */}
                 <Grid2 size={{ xs: 6, md: 6 }}>
-                    <FormControl fullWidth sx={{ mt: 1 }} size="small">
+                    <FormControl fullWidth sx={{ mt: 1 }} size="small" error={!!errorFiltro}>
                         <InputLabel id="lblParametrosFiltro">Seleccione opción</InputLabel>
                         <Select
                             labelId="lblParametrosFiltro"
@@ -71,170 +104,178 @@ const FiltrosExportacion = ({
                                 ))
                             }
                         </Select>
+                        {errorFiltro && (
+                            <FormHelperText error>{errorFiltro}</FormHelperText>
+                        )}
                     </FormControl>
-                    <Divider sx={{ my: 2 }} />
+                    {(valorFiltro === 2 || valorFiltro === "2") && (<Divider sx={{ my: 2 }} />)}
                 </Grid2>
                 <Grid2 size={{ xs: 6, md: 6 }}></Grid2>
 
+                {/* Mostrar controles solo si valorFiltro === 2 ("Agregar filtrado") */}
+                {(valorFiltro === 2 || valorFiltro === "2") && (
+                    <>
 
-                {/* Cliente */}
-                <Grid2 size={{ xs: 6, md: 6 }}>
-                    <Tooltip
-                        title={
-                            clienteSeleccionado && clienteSeleccionado.nombre && clienteSeleccionado.nombre.length > 16
-                                ? clienteSeleccionado.nombre
-                                : ""
-                        }
-                        disableHoverListener={
-                            !clienteSeleccionado ||
-                            !(clienteSeleccionado.nombre && clienteSeleccionado.nombre.length > 16)
-                        }
-                        arrow
-                        placement="top"
-                    >
-                        <Autocomplete
-                            options={clientes}
-                            getOptionLabel={option => option.nombre || ""}
-                            //getOptionLabel={option => option.nombre ? `${option.nombre} (${option.clienteId.slice(0, 6)})` : ""}
-                            isOptionEqualToValue={(option, value) => option.clienteId === value.clienteId}
-                            value={clienteSeleccionado}
-                            onChange={(_, newValue) => {
-                                setClienteSeleccionado(newValue);
-                                console.log("Cliente seleccionado:", newValue);
-                            }}
-                            renderOption={(props, option) => (
-                                // con renderOption se evitar que marque error si se repite el nombre de Cliente.
-                                <li {...props} key={option.clienteId}>
-                                    {option.nombre}
-                                </li>
-                            )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Cliente"
-                                    size="small"
-                                    variant="outlined"
-                                    fullWidth
+                        {/* Cliente */}
+                        <Grid2 size={{ xs: 6, md: 6 }}>
+                            <Tooltip
+                                title={
+                                    clienteSeleccionado && clienteSeleccionado.nombre && clienteSeleccionado.nombre.length > 16
+                                        ? clienteSeleccionado.nombre
+                                        : ""
+                                }
+                                disableHoverListener={
+                                    !clienteSeleccionado ||
+                                    !(clienteSeleccionado.nombre && clienteSeleccionado.nombre.length > 16)
+                                }
+                                arrow
+                                placement="top"
+                            >
+                                <Autocomplete
+                                    options={clientes}
+                                    getOptionLabel={option => option.nombre || ""}
+                                    //getOptionLabel={option => option.nombre ? `${option.nombre} (${option.clienteId.slice(0, 6)})` : ""}
+                                    isOptionEqualToValue={(option, value) => option.clienteId === value.clienteId}
+                                    value={clienteSeleccionado}
+                                    onChange={(_, newValue) => {
+                                        setClienteSeleccionado(newValue);
+                                        //console.log("Cliente seleccionado:", newValue);
+                                    }}
+                                    renderOption={(props, option) => (
+                                        // con renderOption se evitar que marque error si se repite el nombre de Cliente.
+                                        <li {...props} key={option.clienteId}>
+                                            {option.nombre}
+                                        </li>
+                                    )}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Cliente"
+                                            size="small"
+                                            variant="outlined"
+                                            fullWidth
+                                        />
+                                    )}
+                                    noOptionsText="Sin resultados"
                                 />
-                            )}
-                            noOptionsText="Sin resultados"
-                        />
-                    </Tooltip>
-                </Grid2>
+                            </Tooltip>
+                        </Grid2>
 
 
-                {/* MES */}
-                <Grid2 size={{ xs: 6, md: 6 }} sx={{ pl: 2 }}>
-                    <FormControl fullWidth sx={{ mt: 0 }} size="small">
-                        <InputLabel id="lblMes">Mes</InputLabel>
-                        <Select
-                            labelId="lblMes"
-                            id="mes"
-                            value={mesSeleccionado}
-                            name="Mes"
-                            label="Solución"
-                            onChange={handleChangeMes}
-                        >
-                            <MenuItem value="">
-                                <em>Seleccione mes</em>
-                            </MenuItem>
-                            {meses.map((mes) => (
-                                <MenuItem key={mes.id} value={mes.id}>{mes.nombre}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </Grid2>
-
-
-                {/* Solución */}
-                <Grid2 size={{ xs: 6, md: 6 }} sx={{ mt: 2, pl: 0 }}>
-                    <Tooltip
-                        title={
-                            solucionSeleccionado && solucionSeleccionado.nombre && solucionSeleccionado.nombre.length > 16
-                                ? solucionSeleccionado.nombre
-                                : ""
-                        }
-                        disableHoverListener={
-                            !solucionSeleccionado ||
-                            !(solucionSeleccionado.nombre && solucionSeleccionado.nombre.length > 16)
-                        }
-                        arrow
-                        placement="top"
-                    >
-                        <Autocomplete
-                            options={soluciones}
-                            getOptionLabel={option => option.nombre || ""}
-                            isOptionEqualToValue={(option, value) => option.solucionId === value.solucionId}
-                            value={solucionSeleccionado}
-                            onChange={(_, newValue) => {
-                                setSolucionSeleccionado(newValue);
-                                console.log("Solución seleccionada:", newValue);
-                            }}
-                            renderOption={(props, option) => (
-                                // con renderOption se evitar que marque error si se repite el nombre de Cliente.
-                                <li {...props} key={option.solucionId}>
-                                    {option.nombre}
-                                </li>
-                            )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
+                        {/* MES */}
+                        <Grid2 size={{ xs: 6, md: 6 }} sx={{ pl: 2 }}>
+                            <FormControl fullWidth sx={{ mt: 0 }} size="small">
+                                <InputLabel id="lblMes">Mes</InputLabel>
+                                <Select
+                                    labelId="lblMes"
+                                    id="mes"
+                                    value={mesSeleccionado}
+                                    name="Mes"
                                     label="Solución"
-                                    size="small"
-                                    variant="outlined"
-                                    fullWidth
+                                    onChange={handleChangeMes}
+                                >
+                                    <MenuItem value="">
+                                        <em>Seleccione mes</em>
+                                    </MenuItem>
+                                    {meses.map((mes) => (
+                                        <MenuItem key={mes.id} value={mes.id}>{mes.nombre}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid2>
+
+
+                        {/* Solución */}
+                        <Grid2 size={{ xs: 6, md: 6 }} sx={{ mt: 2, pl: 0 }}>
+                            <Tooltip
+                                title={
+                                    solucionSeleccionado && solucionSeleccionado.nombre && solucionSeleccionado.nombre.length > 16
+                                        ? solucionSeleccionado.nombre
+                                        : ""
+                                }
+                                disableHoverListener={
+                                    !solucionSeleccionado ||
+                                    !(solucionSeleccionado.nombre && solucionSeleccionado.nombre.length > 16)
+                                }
+                                arrow
+                                placement="top"
+                            >
+                                <Autocomplete
+                                    options={soluciones}
+                                    getOptionLabel={option => option.nombre || ""}
+                                    isOptionEqualToValue={(option, value) => option.solucionId === value.solucionId}
+                                    value={solucionSeleccionado}
+                                    onChange={(_, newValue) => {
+                                        setSolucionSeleccionado(newValue);
+                                        //console.log("Solución seleccionada:", newValue);
+                                    }}
+                                    renderOption={(props, option) => (
+                                        // con renderOption se evitar que marque error si se repite el nombre de Cliente.
+                                        <li {...props} key={option.solucionId}>
+                                            {option.nombre}
+                                        </li>
+                                    )}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Solución"
+                                            size="small"
+                                            variant="outlined"
+                                            fullWidth
+                                        />
+                                    )}
+                                    noOptionsText="Sin resultados"
                                 />
-                            )}
-                            noOptionsText="Sin resultados"
-                        />
-                    </Tooltip>
-                </Grid2>
+                            </Tooltip>
+                        </Grid2>
 
 
-                {/* Actividad */}
-                <Grid2 size={{ xs: 6, md: 6 }} sx={{ mt: 2, pl: 2 }}>
-                    <Tooltip
-                        title={
-                            actividadSeleccionada && actividadSeleccionada.nombre && actividadSeleccionada.nombre.length > 16
-                                ? actividadSeleccionada.nombre
-                                : ""
-                        }
-                        disableHoverListener={
-                            !actividadSeleccionada ||
-                            !(actividadSeleccionada.nombre && actividadSeleccionada.nombre.length > 16)
-                        }
-                        arrow
-                        placement="top"
-                    >
-                        <Autocomplete
-                            options={actividades}
-                            getOptionLabel={option => option.nombre || ""}
-                            isOptionEqualToValue={(option, value) => option.actividadId === value.actividadId}
-                            value={actividadSeleccionada}
-                            onChange={(_, newValue) => {
-                                setActividadSeleccionada(newValue);
-                                console.log("Actividad seleccionada:", newValue);
-                            }}
-                            renderOption={(props, option) => (
-                                // con renderOption se evitar que marque error si se repite el nombre de Cliente.
-                                <li {...props} key={option.actividadId}>
-                                    {option.nombre}
-                                </li>
-                            )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Actividad"
-                                    size="small"
-                                    variant="outlined"
-                                    fullWidth
+                        {/* Actividad */}
+                        <Grid2 size={{ xs: 6, md: 6 }} sx={{ mt: 2, pl: 2 }}>
+                            <Tooltip
+                                title={
+                                    actividadSeleccionada && actividadSeleccionada.nombre && actividadSeleccionada.nombre.length > 16
+                                        ? actividadSeleccionada.nombre
+                                        : ""
+                                }
+                                disableHoverListener={
+                                    !actividadSeleccionada ||
+                                    !(actividadSeleccionada.nombre && actividadSeleccionada.nombre.length > 16)
+                                }
+                                arrow
+                                placement="top"
+                            >
+                                <Autocomplete
+                                    options={actividades}
+                                    getOptionLabel={option => option.nombre || ""}
+                                    isOptionEqualToValue={(option, value) => option.actividadId === value.actividadId}
+                                    value={actividadSeleccionada}
+                                    onChange={(_, newValue) => {
+                                        setActividadSeleccionada(newValue);
+                                        //console.log("Actividad seleccionada:", newValue);
+                                    }}
+                                    renderOption={(props, option) => (
+                                        // con renderOption se evitar que marque error si se repite el nombre de Cliente.
+                                        <li {...props} key={option.actividadId}>
+                                            {option.nombre}
+                                        </li>
+                                    )}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Actividad"
+                                            size="small"
+                                            variant="outlined"
+                                            fullWidth
+                                        />
+                                    )}
+                                    noOptionsText="Sin resultados"
                                 />
-                            )}
-                            noOptionsText="Sin resultados"
-                        />
-                    </Tooltip>
-                </Grid2>
+                            </Tooltip>
+                        </Grid2>
 
+                    </>
+                )}
 
             </Grid2>
         </>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -245,6 +245,21 @@ const DetalleRegistro = ({
   };
 
 
+
+  // Estado para los filtros seleccionados
+  const [filtrosSeleccionados, setFiltrosSeleccionados] = useState({
+    cliente: null,
+    solucion: null,
+    actividad: null,
+    mes: null,
+    tipoFiltro: null
+  });
+
+  // Callback para actualizar los filtros
+  const handleFiltrosChange = useCallback((nuevosFiltros) => {
+    setFiltrosSeleccionados(nuevosFiltros);
+  }, []);
+
   const fnExportExcel = async () => {
     // Lógica para exportar a Excel
     setLoadingExcel(true);
@@ -255,6 +270,10 @@ const DetalleRegistro = ({
       const payload = {
         usuarioId: usuarioSesion.usuarioId || "",
         periodo: anioResumen.year() || 0, // enviar el año seleccionado
+        clienteId: filtrosSeleccionados.cliente?.clienteId || null,
+        solucionId: filtrosSeleccionados.solucion?.solucionId || null,
+        actividadId: filtrosSeleccionados.actividad?.actividadId || null,
+        mes: filtrosSeleccionados.mes || null,
       }
       const response = await exportarRegistrosEXCELAction(payload);
       let { status, statusText } = response;
@@ -315,6 +334,10 @@ const DetalleRegistro = ({
       const payload = {
         usuarioId: usuarioSesion.usuarioId || "",
         periodo: anioResumen.year() || 0, // enviar el año seleccionado
+        clienteId: filtrosSeleccionados.cliente?.clienteId || null,
+        solucionId: filtrosSeleccionados.solucion?.solucionId || null,
+        actividadId: filtrosSeleccionados.actividad?.actividadId || null,
+        mes: filtrosSeleccionados.mes || null,
       }
       const response = await exportarRegistrosPDFAction(payload);
       let { status, statusText } = response;
@@ -366,8 +389,21 @@ const DetalleRegistro = ({
   };
 
   // Variable para abrir el diálogo de filtros de exportación.
+  // Tamaños dinámicos para el diálogo de filtros de exportación
+  let dialogWidth = "600px";
+  let dialogHeight = "350px";
+  if (!filtrosSeleccionados.tipoFiltro
+    || filtrosSeleccionados.tipoFiltro === 1
+    || filtrosSeleccionados.tipoFiltro === "1") {
+    // Solo el select visible, hazlo más pequeño
+    dialogWidth = "430px";
+    dialogHeight = "230px";
+  }
+
   const [openDialogFiltrosExpArchivo, setOpenDialogFiltrosExpArchivo] = useState(false);
   const [tipoExportacion, setTipoExportacion] = useState(null);
+  const [errorFiltro, setErrorFiltro] = useState(""); // Nuevo estado para el error
+  const handleLimpiarErrorFiltro = () => setErrorFiltro("");
 
   const handleOpenDialogFiltrosExpArchivo = (tipo) => {
     setTipoExportacion(tipo);
@@ -382,6 +418,15 @@ const DetalleRegistro = ({
   const handleConfirmDialogFiltrosExpArchivo = e => {
     e.preventDefault();
 
+    // Validar que el usuario haya seleccionado una opción de filtrado
+    if (!filtrosSeleccionados.tipoFiltro) {
+      setErrorFiltro("Por favor, seleccione una opción de filtrado.");
+      return; // No cerrar el modal
+    }
+
+    // Si pasa la validación, limpia el error y continúa
+    setErrorFiltro("");
+
     // Dependiendo del tipo de exportación, llama a la función correspondiente
     if (tipoExportacion === "excel") {
       fnExportExcel();
@@ -392,6 +437,7 @@ const DetalleRegistro = ({
 
     setOpenDialogFiltrosExpArchivo(false);
   };
+
 
 
   // Campos obligatorios
@@ -695,6 +741,7 @@ const DetalleRegistro = ({
               sx={{ width: 120 }}
               slotProps={{ textField: { size: 'small' } }}
               maxDate={dayjs().endOf('year')}
+              disabled={rows.length === 0} // Solo habilitado si hay al menos un renglón
             />
           </LocalizationProvider>
         </Box>
@@ -954,12 +1001,16 @@ const DetalleRegistro = ({
           <FiltrosExportacion
             clientes={listadoClientes}
             soluciones={listadoSoluciones}
-            actividades={listadoActividades} />
+            actividades={listadoActividades}
+            onFiltrosChange={handleFiltrosChange} // <-- pasa el callback
+            errorFiltro={errorFiltro} // <-- pasa el error
+            onLimpiarErrorFiltro={handleLimpiarErrorFiltro}
+          />
         }
         onClose={handleCloseDialogFiltrosExpArchivo}
         onConfirm={handleConfirmDialogFiltrosExpArchivo}
-        width={"600px"}
-        height={"330px"}
+        width={dialogWidth}
+        height={dialogHeight}
       />
 
     </>
