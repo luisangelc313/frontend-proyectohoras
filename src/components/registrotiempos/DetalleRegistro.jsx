@@ -701,6 +701,7 @@ const DetalleRegistro = ({
     }
   };
 
+
   return (
     <>
       <Box>
@@ -962,6 +963,8 @@ const DetalleRegistro = ({
             page={paginadorRequest.numeroPagina}
             handlePageChange={handlePageChange}
             handleRowsPerPageChange={handleRowsPerPageChange}
+          // handleEdit={handleEditarRegistroResumen}
+          // handleDelete={handleEliminarRegistroResumen}
           />
         )}
       </Grid2>
