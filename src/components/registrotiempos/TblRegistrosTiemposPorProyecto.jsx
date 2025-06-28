@@ -1,5 +1,7 @@
+import { useState } from "react";
 import {
     Box,
+    IconButton,
     Table,
     TableBody,
     TableCell,
@@ -8,11 +10,13 @@ import {
     TableRow,
     TablePagination,
     Paper,
-    IconButton,
 } from "@mui/material";
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
+import {
+    ConfirmDialogEliminarRegistroResumen
+} from "./Confirm";
 
 const headers = [
     { label: "MES" },
@@ -32,6 +36,11 @@ const TblRegistrosTiemposPorProyecto = ({
     handlePageChange,
     handleRowsPerPageChange
 }) => {
+
+    const [openDialog, setOpenDialog] = useState(false);
+    const [registroAEliminar, setRegistroAEliminar] = useState(null);
+
+
     // Editar registro
     const handleEditarRegistroResumen = (registro) => {
         // Aquí tu lógica de edición
@@ -39,9 +48,27 @@ const TblRegistrosTiemposPorProyecto = ({
     };
 
     // Eliminar registro
-    const handleEliminarRegistroResumen = (registro) => {
-        // Aquí tu lógica de eliminación
-        console.log("Eliminar registro resumen:", registro);
+    const handleOpenDialogConfirmEliminar = (registro) => {
+        // Lógica de eliminación
+        //console.log("Eliminar registro resumen:", registro);
+
+        setRegistroAEliminar(registro); // Guarda el registro a eliminar
+        setOpenDialog(true);// Abre el diálogo de confirmación
+    };
+
+
+    // Cuando el usuario confirma la eliminación
+    const handleConfirmEliminar = () => {
+        console.log("Registro a Eliminar:", registroAEliminar);
+        // Lógica real de eliminación
+        setOpenDialog(false);
+        setRegistroAEliminar(null);
+    };
+
+    // Cuando el usuario cancela
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+        setRegistroAEliminar(null);
     };
 
 
@@ -103,7 +130,7 @@ const TblRegistrosTiemposPorProyecto = ({
                                                 size="small"
                                                 aria-label="Eliminar"
                                                 title="Eliminar Registro"
-                                                onClick={() => handleEliminarRegistroResumen(row)}
+                                                onClick={() => handleOpenDialogConfirmEliminar(row)}
                                             >
                                                 <DeleteIcon sx={{ fontSize: '16px' }} />
                                             </IconButton>
@@ -145,6 +172,13 @@ const TblRegistrosTiemposPorProyecto = ({
                 >
                 </TablePagination>
             </Box>
+
+            <ConfirmDialogEliminarRegistroResumen
+                open={openDialog}
+                onClose={handleCloseDialog}
+                onConfirm={handleConfirmEliminar}
+                proyectoEliminar={registroAEliminar ? registroAEliminar.descripcion : ""}
+            />
         </>
     )
 };
