@@ -7,12 +7,14 @@ import {
     Divider,
     Typography
 } from "@mui/material"
+import CircularProgress from "@mui/material/CircularProgress";
 
 const ConfirmDialogEliminarRegistroResumen = ({
     open,
     onClose,
     onConfirm,
     proyectoEliminar = "",
+    loading = false, // Manejador del estado de carga.
 }) => {
 
     const handleonClose = (e, reason) => {
@@ -78,8 +80,14 @@ const ConfirmDialogEliminarRegistroResumen = ({
                 <Button onClick={handleonClose} color="error" variant="outlined">
                     Cancelar
                 </Button>
-                <Button onClick={handleonConfirm} color="primary" variant="contained">
-                    Aceptar
+                <Button
+                    onClick={handleonConfirm}
+                    color="primary"
+                    variant="contained"
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+                >
+                    {loading ? "Eliminando..." : "Aceptar"}
                 </Button>
             </DialogActions>
 

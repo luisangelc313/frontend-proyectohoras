@@ -17,6 +17,12 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import {
     ConfirmDialogEliminarRegistroResumen
 } from "./Confirm";
+import {
+    eliminarRegistroAction,
+} from "../../actions/RegistroTiemposAction";
+import { HttpStatus } from "../../utils/HttpStatus";
+import { useStateValue } from "../../context/store";
+
 
 const headers = [
     { label: "MES" },
@@ -34,8 +40,12 @@ const TblRegistrosTiemposPorProyecto = ({
     rowsPerPage = 10,
     page = 0,
     handlePageChange,
-    handleRowsPerPageChange
+    handleRowsPerPageChange,
+    refrescarResumen, // Función para refrescar la tabla con los registros actualizados 'Resumen'
 }) => {
+
+    const [, dispatch] = useStateValue();
+    const [loading, setLoading] = useState(false);
 
     const [openDialog, setOpenDialog] = useState(false);
     const [registroAEliminar, setRegistroAEliminar] = useState(null);
@@ -58,11 +68,60 @@ const TblRegistrosTiemposPorProyecto = ({
 
 
     // Cuando el usuario confirma la eliminación
-    const handleConfirmEliminar = () => {
-        console.log("Registro a Eliminar:", registroAEliminar);
-        // Lógica real de eliminación
-        setOpenDialog(false);
-        setRegistroAEliminar(null);
+    const handleConfirmEliminar = async () => {
+        //console.log("Registro a Eliminar:", registroAEliminar);
+
+        //Llamar acción de eliminar registro
+        setLoading(true);
+        let msgError = "Ocurrió un error al eliminar la información";
+        try {
+            const response = await eliminarRegistroAction(registroAEliminar);
+            const { status, statusText } = response;
+
+            setLoading(false);
+
+            if (status === HttpStatus.OK && statusText === "OK") {
+                dispatch({
+                    type: "OPEN_SNACKBAR",
+                    openMensaje: {
+                        open: true,
+                        mensaje: "Registro eliminado correctamente",
+                        severity: "success",
+                        //vertical: "bottom",
+                        //horizontal: "left"
+                    },
+                });
+
+                if (refrescarResumen) refrescarResumen(); // <--- refresca los datos de la tabla 'Resumen'
+
+            } else {
+                dispatch({
+                    type: "OPEN_SNACKBAR",
+                    openMensaje: {
+                        open: true,
+                        mensaje: msgError,
+                        severity: "error",
+                    },
+                });
+            }
+
+        } catch (error) {
+            const errorMessage = error.response?.data?.errors?.msg || msgError;
+            dispatch({
+                type: "OPEN_SNACKBAR",
+                openMensaje: {
+                    open: true,
+                    mensaje: errorMessage,
+                    severity: "error",
+                },
+            });
+
+        } finally {
+            setLoading(false);
+            setOpenDialog(false);
+            setRegistroAEliminar(null);
+        }
+
     };
 
     // Cuando el usuario cancela
@@ -178,6 +237,7 @@ const TblRegistrosTiemposPorProyecto = ({
                 onClose={handleCloseDialog}
                 onConfirm={handleConfirmEliminar}
                 proyectoEliminar={registroAEliminar ? registroAEliminar.descripcion : ""}
+                loading={loading}
             />
         </>
     )

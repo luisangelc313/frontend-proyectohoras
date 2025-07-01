@@ -38,3 +38,14 @@ export const obtenerRegistrosPaginadoAction = data => {
     });
 }
 
+
+export const eliminarRegistroAction = data => {
+    return new Promise((resolve, reject) => {
+        HttpCliente.delete(`registro/${data?.registroId}`)
+            .then((response) => {
+                resolve(response);
+            })
+            .catch((error) => reject(error.response));
+    });
+}
+

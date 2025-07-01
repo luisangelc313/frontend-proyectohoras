@@ -963,8 +963,9 @@ const DetalleRegistro = ({
             page={paginadorRequest.numeroPagina}
             handlePageChange={handlePageChange}
             handleRowsPerPageChange={handleRowsPerPageChange}
-          // handleEdit={handleEditarRegistroResumen}
-          // handleDelete={handleEliminarRegistroResumen}
+            // handleEdit={handleEditarRegistroResumen}
+            // handleDelete={handleEliminarRegistroResumen}
+            refrescarResumen={() => obtenerRegistrosTiemposPorProyecto(anioResumen.year())}
           />
         )}
       </Grid2>
