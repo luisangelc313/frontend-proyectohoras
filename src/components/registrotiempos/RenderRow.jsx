@@ -7,7 +7,7 @@ import {
     Autocomplete
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
-
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const RenderRow = ({
     row,
@@ -17,7 +17,8 @@ const RenderRow = ({
     actividades,
     handleRowChange,
     handleRemoveRow,
-    errors = {}
+    errors = {},
+    registroEditando,
 }) => {
 
     const mesesDelAnio = Array.from({ length: 12 }, (_, i) => ({
@@ -251,7 +252,7 @@ const RenderRow = ({
                 </FormControl>
             </Grid2>
 
-            {/* Horas */}
+            {/* Horas y ButtonIcon de acciones */}
             <Grid2 size={{ xs: 6, md: 1, lg: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <FormControl
@@ -287,17 +288,22 @@ const RenderRow = ({
                         />
                     </FormControl>
 
-                    {/* Botón "Eliminar renglón" */}
-                    <Tooltip title="Eliminar renglón">
-                        <IconButton
-                            color="error"
-                            onClick={() => handleRemoveRow(index)}
-                            size="small"
-                            sx={{ ml: 1 }}
-                        >
-                            <DeleteIcon />
-                        </IconButton>
-                    </Tooltip>
+
+                    {/* Botón de acción */}
+                    {!registroEditando &&
+                        (
+                            //Botón "Eliminar renglón"
+                            <Tooltip title="Eliminar renglón">
+                                <IconButton
+                                    color="error"
+                                    onClick={() => handleRemoveRow(index)}
+                                    size="small"
+                                    sx={{ ml: 1 }}
+                                >
+                                    <DeleteIcon />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                 </div>
             </Grid2>
 

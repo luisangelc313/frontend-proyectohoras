@@ -42,7 +42,12 @@ const TblRegistrosTiemposPorProyecto = ({
     handlePageChange,
     handleRowsPerPageChange,
     refrescarResumen, // Función para refrescar la tabla con los registros actualizados 'Resumen'
+    onEditarRegistro,
+    registroEditando,
 }) => {
+    // if (registros) {
+    //     console.log("Registros en TblRegistrosTiemposPorProyecto:", registros);
+    // }
 
     const [, dispatch] = useStateValue();
     const [loading, setLoading] = useState(false);
@@ -54,7 +59,23 @@ const TblRegistrosTiemposPorProyecto = ({
     // Editar registro
     const handleEditarRegistroResumen = (registro) => {
         // Aquí tu lógica de edición
-        console.log("Editar registro resumen:", registro);
+        //console.log("Editar registro resumen:", registro);
+
+        if (registroEditando) {
+            dispatch({
+                type: "OPEN_SNACKBAR",
+                openMensaje: {
+                    open: true,
+                    mensaje: "Ya hay un registro en modificación. Guarda o cancela antes de editar otro.",
+                    severity: "warning",
+                },
+            });
+            return;
+        }
+
+        if (onEditarRegistro)
+            onEditarRegistro(registro);
+
     };
 
     // Eliminar registro

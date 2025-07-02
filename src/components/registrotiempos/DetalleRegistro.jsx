@@ -61,6 +61,28 @@ const DetalleRegistro = ({
   const [openConfirm, setOpenConfirm] = useState(false);
   const [accionConfirm, setAccionConfirm] = useState(""); // "cancelar" o "limpiar"
 
+
+  // Estado para el registro que se está editando
+  const [registroEditando, setRegistroEditando] = useState(null);
+  // Función para cargar el registro en el formulario superior
+  const handleEditarRegistroResumen = registro => {
+    // Carga el registro seleccionado en la parte superior para edición
+    setRows([{
+      ...registro,
+      // Asegúrate de mapear los campos correctamente si los nombres difieren
+      id: registro.registroId,
+      mes: registro.mesId,
+      cliente: registro?.clienteId,
+      solucion: registro?.solucionId,
+      proyecto: registro.descripcion || "",
+      actividad: registro.actividadId,
+      horas: registro.horas
+    }]);
+    setRegistroEditando(registro);
+  };
+
+
+
   //INICIO. variables para paginación y funciones.
   //const [page, setPage] = useState(0);
 
@@ -155,8 +177,12 @@ const DetalleRegistro = ({
           const listaRecordsTransformada = listaRecords.map(item => ({
             ...item,
             mes: meses.find(m => m.id === item.mes)?.nombre || item.mes,
+            mesId: item.mes,
+            clienteId: item.cliente?.clienteId || "00000000-0000-0000-0000-000000000000",
             cliente: item.cliente?.nombre || "",
+            solucionId: item.solucion?.solucionId || "00000000-0000-0000-0000-000000000000",
             solucion: item.solucion?.nombre || "",
+            actividadId: item.actividad?.actividadId || "00000000-0000-0000-0000-000000000000",
             actividad: item.actividad?.nombre || "",
             proyecto: item.descripcion || "",
             horas: item.horas || 0,
@@ -447,6 +473,8 @@ const DetalleRegistro = ({
   const handleGuardarRegistros = async e => {
     e.preventDefault();
 
+    setRegistroEditando(null);
+
     if (!rows || rows.length === 0) return;
 
     let newFieldErrors = {};
@@ -625,6 +653,9 @@ const DetalleRegistro = ({
       setRows([]);
       setFieldErrors({});
     }
+
+    setRegistroEditando(null); // Limpia el estado de edición
+    setRows([]); // O restablece los rows como prefieras (puedes dejarlo vacío o con un renglón nuevo)
   };
 
   const handleConfirmCancel = () => {
@@ -763,6 +794,7 @@ const DetalleRegistro = ({
             handleRowChange={handleRowChange}
             handleRemoveRow={handleRemoveRow}
             errors={fieldErrors[idx] || {}} // <-- errores solo para ese renglón
+            registroEditando={registroEditando}
           />
         ))}
 
@@ -966,6 +998,8 @@ const DetalleRegistro = ({
             // handleEdit={handleEditarRegistroResumen}
             // handleDelete={handleEliminarRegistroResumen}
             refrescarResumen={() => obtenerRegistrosTiemposPorProyecto(anioResumen.year())}
+            onEditarRegistro={handleEditarRegistroResumen}
+            registroEditando={registroEditando}
           />
         )}
       </Grid2>
