@@ -132,8 +132,8 @@ const DetalleRegistroPivote = ({
                     </Grid2>
 
                     {/* ...botones de acción...
-              sección de botones (Cancelar, Limpiar, Guardar) 
-           */}
+                        sección de botones (Cancelar, Limpiar, Guardar) 
+                    */}
                     <Grid2
                         container
                         spacing={0}

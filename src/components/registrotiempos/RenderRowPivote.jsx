@@ -25,6 +25,8 @@ const RenderRowPivote = ({
         nombre: String(i + 1)
     }));
 
+    const maxLengthProyecto = 1000;
+
     return (
         <Grid2 container spacing={2} sx={{ mt: 2 }}>
             {/* Cliente */}
@@ -129,23 +131,43 @@ const RenderRowPivote = ({
 
             {/* Proyecto */}
             <Grid2 size={{ xs: 12, md: 4 }}>
-                <TextField
-                    label="Proyecto"
-                    name="proyecto"
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    required
-                    multiline
-                    minRows={1}
-                    maxRows={1}
-                    value={row.proyecto || ""}
-                    onChange={e => handleRowChange(index, "proyecto", e.target.value)}
-                    slotProps={{
-                        htmlInput: { maxLength: 1000 },
-                        style: { overflowY: 'hidden' }
-                    }}
-                />
+                <div style={{ position: 'relative' }}>
+                    <span
+                        style={{
+                            position: 'absolute',
+                            top: -18, // Ajusta según tu diseño
+                            right: 0,
+                            background: '#1976d2',
+                            color: '#fff',
+                            borderRadius: '12px',
+                            padding: '2px 8px',
+                            fontSize: 12,
+                            fontWeight: 500,
+                            pointerEvents: 'none',
+                            zIndex: 2,
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
+                        }}
+                    >
+                        {(row.proyecto || "").length}/{maxLengthProyecto}
+                    </span>
+                    <TextField
+                        label="Proyecto"
+                        name="proyecto"
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        required
+                        multiline
+                        minRows={1}
+                        maxRows={1}
+                        value={row.proyecto || ""}
+                        onChange={e => handleRowChange(index, "proyecto", e.target.value)}
+                        slotProps={{
+                            htmlInput: { maxLength: maxLengthProyecto },
+                            style: { overflowY: 'hidden' }
+                        }}
+                    />
+                </div>
             </Grid2>
 
             {/* Actividad */}
