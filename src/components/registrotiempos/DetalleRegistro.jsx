@@ -525,6 +525,13 @@ const DetalleRegistro = ({
       periodo: anioSeleccionado.year() // Asegúrate de enviar el año seleccionado
     }));
 
+    let registroId = '';
+    if (registroEditando) {
+      // Si hay un registro editando, actualiza el ID del registro (de momento cuando es editar solo será un registro, se preparara para que sea multiple la edición)
+      myRequest[0].registroId = registroEditando.registroId || "00000000-0000-0000-0000-000000000000";
+      registroId = myRequest[0].registroId;
+    }
+
     // console.log("Datos a guardar:", myRequest[0]);
     // setLoading(false);
     // return;
@@ -537,7 +544,7 @@ const DetalleRegistro = ({
         cantidadElementos: paginadorRequest.cantidadElementos
       };
 
-      const response = await guardarTiemposProyectoAction(payload);
+      const response = await guardarTiemposProyectoAction(payload, registroId);
       let { status, statusText } = response;
 
       if (status === HttpStatus.OK && statusText === "OK") {
@@ -596,6 +603,12 @@ const DetalleRegistro = ({
         }]);
         setFieldErrors({});
 
+        //Invoco el handleCancelar porque resetea la captura y el estado de captura.
+        if (registroEditando) {
+          setRows([]);
+          setFieldErrors({});
+        }
+
         dispatch({
           type: "OPEN_SNACKBAR",
           openMensaje: {
@@ -636,6 +649,7 @@ const DetalleRegistro = ({
     }
 
   };
+
 
   const handleCancelar = () => {
     // Verifica si hay al menos un renglón con algún valor en los campos editables

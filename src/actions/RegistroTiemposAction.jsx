@@ -17,14 +17,26 @@ export const obtenerCapturaInicialAction = () => {
 };
 
 
-export const guardarTiemposProyectoAction = data => {
-    return new Promise((resolve, reject) => {
-        HttpCliente.post(`registro`, data)
-            .then((response) => {
-                resolve(response);
-            })
-            .catch((error) => reject(error.response));
-    });
+export const guardarTiemposProyectoAction = (data, registroId) => {
+    if (registroId && registroId !== '00000000-0000-0000-0000-000000000000') {
+        let id = registroId;
+        return new Promise((resolve, reject) => {
+            HttpCliente.put(`registro/${id}`, data)
+                .then((response) => {
+                    resolve(response);
+                })
+                .catch((error) => reject(error.response));
+        });
+
+    } else {
+        return new Promise((resolve, reject) => {
+            HttpCliente.post(`registro`, data)
+                .then((response) => {
+                    resolve(response);
+                })
+                .catch((error) => reject(error.response));
+        });
+    }
 }
 
 
