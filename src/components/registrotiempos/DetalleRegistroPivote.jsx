@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
     Box,
     Button,
+    CircularProgress,
     Divider,
     Grid2,
     IconButton,
@@ -15,6 +16,9 @@ import SaveIcon from '@mui/icons-material/Save';
 
 import style from "../Tool/style";
 import RenderRowPivote from './RenderRowPivote';
+import { HttpStatus } from "../../utils/HttpStatus";
+import { guardarPivoteAction } from "../../actions/PivoteAction";
+import { useStateValue } from "../../context/store";
 
 
 const DetalleRegistroPivote = ({
@@ -24,22 +28,50 @@ const DetalleRegistroPivote = ({
     listadoActividades,
     usuarioSesion
 }) => {
+    const [btnDisabled, setBtnDisabled] = useState(true);
+    const [loading, setLoading] = useState(false); // Estado para el loading
+
+    // Context para manejar el estado global
+    const [, dispatch] = useStateValue();
+
     //Estado para los renglones dinámicos
     const [rows, setRows] = useState([]); // Empieza con un renglón vacío
 
-    // Cuando cambia la fecha seleccionada, simula una petición a la API
+    // Cuando cambia la fecha seleccionada, hacer una petición a la API para obtener los registros del día seleccionado.
+    const obtenerRegistrosPivotePorFechaSeleccionada = async (fechaSeleccionada) => {
+        console.log("Obtener registros de la Fecha:", fechaSeleccionada.format("YYYY-MM-DD"));
+    }
+
     useEffect(() => {
-        if (fecha && rows.length === 0) {
-            setRows([{ id: Date.now() }]);
-        }
         if (!fecha) {
-            setRows([]);
+            setBtnDisabled(true);
         }
+        else if (fecha && rows.length > 0) {
+            setBtnDisabled(false);
+        }
+
+        if (fecha) {
+            obtenerRegistrosPivotePorFechaSeleccionada(fecha);
+        }
+
     }, [fecha, rows.length]);
+
 
     const handleClickAggNuevoRenglon = e => {
         e.preventDefault();
-        setRows([...rows, { id: Date.now() }]);
+
+        setRows([
+            ...rows,
+            {
+                id: Date.now(),
+                clienteId: "",
+                solucionId: "",
+                proyecto: "",
+                notas: "",
+                actividadId: "",
+                horas: "",
+            }
+        ]);
     };
 
     const handleRowChange = (index, field, value) => {
@@ -52,9 +84,98 @@ const DetalleRegistroPivote = ({
         setRows(rows => rows.filter((_, idx) => idx !== index));
     };
 
+
     // Este evento se ejecuta cuando se Guarda la Información.
-    const handleGuardarRegistros = e => {
+    const handleGuardarRegistros = async e => {
         e.preventDefault();
+
+        // Aquí se puede implementar la lógica para guardar los registros
+        //console.log("Rows:", rows);
+
+        if (!rows || rows.length === 0) return;
+
+        const myRequest = rows.map(row => ({
+            usuarioId: usuarioSesion.usuarioId || "",
+            clienteId: row.cliente,
+            solucionId: row.solucion,
+            proyecto: row.proyecto,
+            notas: row.notas,
+            actividadId: row.actividad,
+            horas: row.horas,
+            fechaRegistro: fecha.format("YYYY-MM-DD") // Formato de fecha YYYY-MM-DD
+        }));
+        //console.log("myRequest:", myRequest);
+
+        //console.log("Fecha Seleccionada:", fecha.format("YYYY-MM-DD"));
+        //return;
+
+        const msjError = "Ocurrió un error al guardar la información.";
+        try {
+            setLoading(true); // <-- Activa el loading
+
+            const payload = {
+                registros: myRequest,
+            };
+
+            const response = await guardarPivoteAction(payload);
+            let { status, statusText } = response;
+            console.log("Response:", response);
+
+            if (status === HttpStatus.OK && statusText === "OK") {
+                //Limpia los renglones después de guardar
+                setRows([
+                    {
+                        id: Date.now(),
+                        usuarioId: usuarioSesion?.usuarioId || "",
+                        clienteId: "",
+                        solucionId: "",
+                        proyecto: "",
+                        notas: "",
+                        actividadId: "",
+                        horas: "",
+                        fechaRegistro: "",
+                    }
+                ]);
+
+                dispatch({
+                    type: "OPEN_SNACKBAR",
+                    openMensaje: {
+                        open: true,
+                        mensaje: "Información registrada correctamente.",
+                        severity: "success",
+                    },
+                });
+
+            } else {
+                dispatch({
+                    type: "OPEN_SNACKBAR",
+                    openMensaje: {
+                        open: true,
+                        mensaje: msjError,
+                        severity: "error",
+                        vertical: "bottom",
+                        horizontal: "left"
+                    },
+                });
+
+            }
+
+        } catch (error) {
+            const errorMessage = error?.data?.errors?.msg || msjError;
+            dispatch({
+                type: "OPEN_SNACKBAR",
+                openMensaje: {
+                    open: true,
+                    mensaje: errorMessage,
+                    severity: "error",
+                    vertical: "bottom",
+                    horizontal: "left"
+                },
+            });
+
+        } finally {
+            setLoading(false); // <-- Desactiva el loading
+        }
     };
 
 
@@ -147,6 +268,7 @@ const DetalleRegistroPivote = ({
                                 variant="contained"
                                 color="error"
                                 size="medium"
+                                disabled={btnDisabled}
                                 sx={{ mx: 2 }}
                                 //onClick={handleOpenDialogCancelar}
                                 style={style.submit}
@@ -161,6 +283,7 @@ const DetalleRegistroPivote = ({
                                 variant="contained"
                                 color="secondary"
                                 size="medium"
+                                disabled={btnDisabled}
                                 sx={{ mx: 2 }}
                                 //onClick={handleLimpiarFormulario}
                                 style={style.submit}
@@ -175,12 +298,13 @@ const DetalleRegistroPivote = ({
                                 variant="contained"
                                 color="primary"
                                 size="medium"
+                                disabled={btnDisabled}
                                 sx={{ mx: 2 }}
                                 style={style.submit}
                                 onClick={handleGuardarRegistros}
-                                startIcon={<SaveIcon />}
+                                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                             >
-                                Guardar
+                                {loading ? "Guardando..." : "Guardar"}
                             </Button>
                         </Grid2>
                     </Grid2>

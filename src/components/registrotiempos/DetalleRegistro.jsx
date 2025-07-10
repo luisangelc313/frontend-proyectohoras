@@ -221,12 +221,15 @@ const DetalleRegistro = ({
     }
   };
 
+
   useEffect(() => {
 
     obtenerRegistrosTiemposPorProyecto(anioResumen.year());
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sesionUsuario, paginadorRequest]);
+
+
 
   const handleClickAggNuevoRenglon = e => {
     e.preventDefault();
