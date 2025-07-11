@@ -15,3 +15,16 @@ export const guardarPivoteAction = (data) => {
             .catch((error) => reject(error.response));
     });
 }
+
+
+export const obtenerRegPivFechaSeleccionadaAction = (usuarioId, fechaSeleccionada) => {
+    return new Promise((resolve, reject) => {
+        HttpCliente.get(`registrospivote/registrospivotefechaseleccionda/${usuarioId}/${fechaSeleccionada}`)
+            .then((response) => {
+                resolve(response);
+            })
+            .catch((error) => reject(error.response));
+    });
+};
+
+

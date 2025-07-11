@@ -17,7 +17,10 @@ import SaveIcon from '@mui/icons-material/Save';
 import style from "../Tool/style";
 import RenderRowPivote from './RenderRowPivote';
 import { HttpStatus } from "../../utils/HttpStatus";
-import { guardarPivoteAction } from "../../actions/PivoteAction";
+import {
+    guardarPivoteAction,
+    obtenerRegPivFechaSeleccionadaAction
+} from "../../actions/PivoteAction";
 import { useStateValue } from "../../context/store";
 
 
@@ -34,27 +37,84 @@ const DetalleRegistroPivote = ({
     // Context para manejar el estado global
     const [, dispatch] = useStateValue();
 
+    // Estado para los registros obtenidos de la API
+    const [registosFromAPI, setRegistosFromAPI] = useState([]);
+    const [horasCapturadas, setHorasCapturadas] = useState(0);
+    const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
+
     //Estado para los renglones dinámicos
     const [rows, setRows] = useState([]); // Empieza con un renglón vacío
 
+
     // Cuando cambia la fecha seleccionada, hacer una petición a la API para obtener los registros del día seleccionado.
-    const obtenerRegistrosPivotePorFechaSeleccionada = async (fechaSeleccionada) => {
-        console.log("Obtener registros de la Fecha:", fechaSeleccionada.format("YYYY-MM-DD"));
-    }
+    const obtenerRegistrosPivotePorFechaSeleccionada = async (usuarioId, fecha, dispatch) => {
+        const msjError = "Ocurrió un error al obtener la información.";
+
+        try {
+            const response = await obtenerRegPivFechaSeleccionadaAction(usuarioId, fecha);
+            let { status, statusText, data } = response;
+
+            if (status === HttpStatus.OK && statusText === "OK") {
+                if (data && data.length > 0) {
+                    setRegistosFromAPI(...data);
+
+                    setHorasCapturadas(data.reduce((total, item) => total + (item.horas || 0), 0));
+                } else {
+                    setRegistosFromAPI([]);
+                    setHorasCapturadas(0);
+                }
+
+            } else {
+                dispatch({
+                    type: "OPEN_SNACKBAR",
+                    openMensaje: {
+                        open: true,
+                        mensaje: msjError,
+                        severity: "error",
+                        vertical: "bottom",
+                        horizontal: "left"
+                    },
+                });
+            }
+
+        } catch (error) {
+            const errorMessage = error?.data?.errors?.msg || msjError;
+            dispatch({
+                type: "OPEN_SNACKBAR",
+                openMensaje: {
+                    open: true,
+                    mensaje: errorMessage,
+                    severity: "error",
+                    vertical: "bottom",
+                    horizontal: "left"
+                },
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (fechaSeleccionada) {
+            const usuarioId = usuarioSesion.usuarioId || "";
+            const fechaFormateada = fechaSeleccionada.format("YYYY-MM-DD");
+            obtenerRegistrosPivotePorFechaSeleccionada(usuarioId, fechaFormateada, dispatch);
+        }
+    }, [fechaSeleccionada, usuarioSesion, dispatch]);
+
 
     useEffect(() => {
         if (!fecha) {
             setBtnDisabled(true);
+            //console.info("Fecha no seleccionada.");
         }
         else if (fecha && rows.length > 0) {
             setBtnDisabled(false);
         }
 
         if (fecha) {
-            obtenerRegistrosPivotePorFechaSeleccionada(fecha);
+            setFechaSeleccionada(fecha);
         }
-
     }, [fecha, rows.length]);
+
 
 
     const handleClickAggNuevoRenglon = e => {
@@ -216,7 +276,7 @@ const DetalleRegistroPivote = ({
                                 captionSide: "bottom",
                                 marginRight: 5,
                             }}>Horas Capturas: </span>
-                        0
+                        {horasCapturadas}
                     </Typography>
                 )}
 
