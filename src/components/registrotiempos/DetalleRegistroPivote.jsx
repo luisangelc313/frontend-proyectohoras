@@ -22,6 +22,7 @@ import {
     obtenerRegPivFechaSeleccionadaAction
 } from "../../actions/PivoteAction";
 import { useStateValue } from "../../context/store";
+import PivoteItemGuardados from "./PivoteItemsGuardados";
 
 
 const DetalleRegistroPivote = ({
@@ -56,9 +57,10 @@ const DetalleRegistroPivote = ({
 
             if (status === HttpStatus.OK && statusText === "OK") {
                 if (data && data.length > 0) {
-                    setRegistosFromAPI(...data);
-
+                    setRegistosFromAPI(data);
                     setHorasCapturadas(data.reduce((total, item) => total + (item.horas || 0), 0));
+                    //console.log("registosFromAPI:", registosFromAPI);
+
                 } else {
                     setRegistosFromAPI([]);
                     setHorasCapturadas(0);
@@ -97,8 +99,13 @@ const DetalleRegistroPivote = ({
             const usuarioId = usuarioSesion.usuarioId || "";
             const fechaFormateada = fechaSeleccionada.format("YYYY-MM-DD");
             obtenerRegistrosPivotePorFechaSeleccionada(usuarioId, fechaFormateada, dispatch);
+
         }
     }, [fechaSeleccionada, usuarioSesion, dispatch]);
+
+    useEffect(() => {
+        //console.log("registosFromAPI ha cambiado:", registosFromAPI);
+    }, [registosFromAPI]);
 
 
     useEffect(() => {
@@ -164,8 +171,8 @@ const DetalleRegistroPivote = ({
             horas: row.horas,
             fechaRegistro: fecha.format("YYYY-MM-DD") // Formato de fecha YYYY-MM-DD
         }));
-        //console.log("myRequest:", myRequest);
 
+        //console.log("myRequest:", myRequest);
         //console.log("Fecha Seleccionada:", fecha.format("YYYY-MM-DD"));
         //return;
 
@@ -178,11 +185,18 @@ const DetalleRegistroPivote = ({
             };
 
             const response = await guardarPivoteAction(payload);
-            let { status, statusText } = response;
-            console.log("Response:", response);
+            let { status, statusText, data } = response;
+            //console.log("Response:", response);
 
             if (status === HttpStatus.OK && statusText === "OK") {
-                //Limpia los renglones después de guardar
+                //console.log("data:", data);
+                if (data && data.length > 0) {
+                    //recorre los registros guardados y actualiza el estado de Total de Horas Capturadas
+                    const totalHoras = data.reduce((total, item) => total + (item.horas || 0), 0);
+                    setHorasCapturadas(totalHoras);
+                }
+
+                //Limpiar los renglones después de guardar
                 setRows([
                     {
                         id: Date.now(),
@@ -371,6 +385,25 @@ const DetalleRegistroPivote = ({
                     <Divider sx={{ my: 2 }} />
 
                 </form>
+            )}
+
+            {fecha && (
+                // Aquí se renderiza la lista de registros guardados.
+                <Grid2 container spacing={4} sx={{ mt: 4 }}>
+                    {
+                        registosFromAPI && registosFromAPI.length > 0
+                            ? (
+                                registosFromAPI.map((item, index) => (
+                                    <Grid2 key={index} size={{ xs: 12, md: 6 }} sx={{ mb: 2 }}>
+                                        <PivoteItemGuardados data={item} />
+                                    </Grid2>
+                                ))
+                            )
+                            : (
+                                <p>No hay registros capturados.</p>
+                            )
+                    }
+                </Grid2>
             )}
         </>
     )
