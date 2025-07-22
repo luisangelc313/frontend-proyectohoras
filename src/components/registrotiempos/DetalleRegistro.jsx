@@ -672,7 +672,7 @@ const DetalleRegistro = ({
     }
 
     setRegistroEditando(null); // Limpia el estado de edición
-    setRows([]); // O restablece los rows como prefieras (puedes dejarlo vacío o con un renglón nuevo)
+    //setRows([]); // O restablece los rows como prefieras (puedes dejarlo vacío o con un renglón nuevo)
   };
 
   const handleConfirmCancel = () => {

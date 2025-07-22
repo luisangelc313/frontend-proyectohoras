@@ -79,7 +79,7 @@ const Login = () => {
 
     loginUsuario(usuario, dispatch)
       .then((response) => {
-        if (response.status === HttpStatus.OK) {
+        if (response && response.status === HttpStatus.OK) {
           window.localStorage.setItem("token_seguridad", response.data.token);
 
           if (response.data.primerAcceso && !response.data.fechaPrimerAcceso) {
@@ -108,8 +108,8 @@ const Login = () => {
           // });
         }
         else {
-          let errorMsg = "Las credenciales del usuario son incorrectas";
-          if (response.data && response.data.errors && response.data.errors) {
+          let errorMsg = "Credenciales de usuario incorrectas, ajuste e intente nuevamente";
+          if (response && response.data && response.data.errors && response.data.errors) {
             errorMsg = response.data.errors.msg;
           }
 

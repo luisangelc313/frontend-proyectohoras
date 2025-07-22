@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Box,
     Button,
@@ -14,6 +15,7 @@ import Cancel from '@mui/icons-material/Cancel';
 import ClearAll from '@mui/icons-material/ClearAll';
 import SaveIcon from '@mui/icons-material/Save';
 
+
 import style from "../Tool/style";
 import RenderRowPivote from './RenderRowPivote';
 import { HttpStatus } from "../../utils/HttpStatus";
@@ -21,8 +23,12 @@ import {
     guardarPivoteAction,
     obtenerRegPivFechaSeleccionadaAction
 } from "../../actions/PivoteAction";
+import {
+    ConfirmDialog,
+} from "./Confirm";
 import { useStateValue } from "../../context/store";
 import PivoteItemGuardados from "./PivoteItemsGuardados";
+import DialogEditarRegistroPivote from "./hooks/DialogEditarRegistroPivote";
 
 
 const DetalleRegistroPivote = ({
@@ -32,6 +38,8 @@ const DetalleRegistroPivote = ({
     listadoActividades,
     usuarioSesion
 }) => {
+    const navigate = useNavigate();
+
     const [btnDisabled, setBtnDisabled] = useState(true);
     const [loading, setLoading] = useState(false); // Estado para el loading
 
@@ -43,7 +51,7 @@ const DetalleRegistroPivote = ({
     const [horasCapturadas, setHorasCapturadas] = useState(0);
     const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
 
-    //Estado para los renglones dinámicos
+    // Estado para los renglones dinámicos
     const [rows, setRows] = useState([]); // Empieza con un renglón vacío
 
 
@@ -145,6 +153,16 @@ const DetalleRegistroPivote = ({
         const newRows = [...rows];
         newRows[index] = { ...newRows[index], [field]: value };
         setRows(newRows);
+
+        if (fieldErrors[index]?.[field]) {
+            setFieldErrors(prev => {
+                const updated = { ...prev };
+                if (updated[index]) {
+                    updated[index] = { ...updated[index], [field]: false };
+                }
+                return updated;
+            });
+        }
     };
 
     const handleRemoveRow = (index) => {
@@ -152,7 +170,43 @@ const DetalleRegistroPivote = ({
     };
 
 
-    // Este evento se ejecuta cuando se Guarda la Información.
+    // Estado para el diálogo de confirmación (Cancelar, Limpiar)
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [accionConfirm, setAccionConfirm] = useState(""); // "cancelar" o "limpiar"
+
+    const handleCloseConfirm = () => {
+        setOpenConfirm(false);
+    };
+
+    const handleConfirmCancel = () => {
+        if (accionConfirm === "limpiar") {
+            setRows([{
+                id: Date.now(),
+                usuarioId: usuarioSesion?.usuarioId || "",
+                clienteId: "",
+                solucionId: "",
+                proyecto: "",
+                actividadId: "",
+                horas: ""
+            }]);
+            setFieldErrors({});
+
+        } else if (accionConfirm === "abandonar") {
+            navigate("/"); // Redirige al home
+
+        } else {
+            setRows([]);
+            setFieldErrors({});
+        }
+
+        setOpenConfirm(false);
+    }
+
+
+    // Campos obligatorios
+    const camposObligatorios = ["cliente", "solucion", "proyecto", "actividad", "horas"];
+    const [fieldErrors, setFieldErrors] = useState({});
+    // GUARDAR - Este evento se ejecuta cuando se Guarda la Información.
     const handleGuardarRegistros = async e => {
         e.preventDefault();
 
@@ -160,6 +214,42 @@ const DetalleRegistroPivote = ({
         //console.log("Rows:", rows);
 
         if (!rows || rows.length === 0) return;
+
+        let newFieldErrors = {};
+        let hasError = false;
+
+        rows.forEach((row, rowIdx) => {
+            camposObligatorios.forEach(campo => {
+                if (!row[campo] || row[campo] === "") {
+                    hasError = true;
+                    if (!newFieldErrors[rowIdx]) newFieldErrors[rowIdx] = {};
+                    newFieldErrors[rowIdx][campo] = true;
+                }
+            });
+        });
+
+        setFieldErrors(newFieldErrors);
+        setLoading(true); // <-- Activa el loading
+
+        if (hasError) {
+            //setShowErrors(true); // <-- Mostrar errores
+            dispatch({
+                type: "OPEN_SNACKBAR",
+                openMensaje: {
+                    open: true,
+                    mensaje: "Faltan campos requeridos por completar.",
+                    severity: "warning",
+                    vertical: "top",
+                    horizontal: "right",
+                },
+            });
+
+            setLoading(false); // <-- Desactiva el loading
+            return;
+        }
+
+        const msjError = "Ocurrió un error al guardar la información.";
+        setFieldErrors({});
 
         const myRequest = rows.map(row => ({
             usuarioId: usuarioSesion.usuarioId || "",
@@ -176,10 +266,7 @@ const DetalleRegistroPivote = ({
         //console.log("Fecha Seleccionada:", fecha.format("YYYY-MM-DD"));
         //return;
 
-        const msjError = "Ocurrió un error al guardar la información.";
         try {
-            setLoading(true); // <-- Activa el loading
-
             const payload = {
                 registros: myRequest,
             };
@@ -194,6 +281,9 @@ const DetalleRegistroPivote = ({
                     //recorre los registros guardados y actualiza el estado de Total de Horas Capturadas
                     const totalHoras = data.reduce((total, item) => total + (item.horas || 0), 0);
                     setHorasCapturadas(totalHoras);
+
+                    // ACTUALIZA registosFromAPI directamente con data si tu API regresa los registros completos
+                    setRegistosFromAPI(data);
                 }
 
                 //Limpiar los renglones después de guardar
@@ -252,6 +342,77 @@ const DetalleRegistroPivote = ({
         }
     };
 
+    // LIMPIAR - Este evento se ejecuta cuando se limpia el formulario.
+    const handleLimpiar = () => {
+        const camposEditables = [...camposObligatorios];
+        const tieneAlgunValor = rows.some(row =>
+            camposEditables.some(
+                campo => row[campo] !== "" && row[campo] !== null && row[campo] !== undefined && row[campo] !== 0
+            )
+        );
+
+        if (rows.length > 0 && tieneAlgunValor) {
+            setAccionConfirm("limpiar");
+            setOpenConfirm(true);
+
+        } else {
+            setRows([{
+                id: Date.now(),
+                usuarioId: usuarioSesion?.usuarioId || "",
+                mes: "",
+                clienteId: "",
+                solucionId: "",
+                proyecto: "",
+                actividadId: "",
+                horas: ""
+            }]);
+            setFieldErrors({});
+        }
+    };
+
+    // CANCELAR - Este evento se ejecuta cuando se cancela la acción.
+    const handleCancelar = e => {
+        e.preventDefault();
+
+        // Verifica si hay al menos un renglón con algún valor en los campos editables
+        const camposEditables = [...camposObligatorios];
+        const tieneAlgunValor = rows.some(row =>
+            camposEditables.some(
+                campo => row[campo] !== "" && row[campo] !== null && row[campo] !== undefined && row[campo] !== 0
+            )
+        );
+
+        if (rows.length > 0 && tieneAlgunValor) {
+            setAccionConfirm("cancelar");
+            setOpenConfirm(true);
+        } else {
+            setRows([]);
+            setFieldErrors({});
+        }
+    }
+
+
+    const [registroSeleccionado, setRegistroSeleccionado] = useState(null);
+    const [openDialogEditar, setOpenDialogEditar] = useState(false);
+
+    // Abre el diálogo de edición con el registro seleccionado
+    const handleClickEditarRegistro = (data) => {
+        setRegistroSeleccionado(data);
+        setOpenDialogEditar(true);
+    };
+
+    const handleCloseDialogEditar = () => {
+        setOpenDialogEditar(false);
+        setRegistroSeleccionado(null);
+    };
+
+    const handleGuardarCambiosRegistro = (registroEditado) => {
+        console.log("Guardar cambios de:", registroEditado);
+        // Aquí implementa la lógica para guardar cambios en el backend
+        handleCloseDialogEditar();
+    };
+
+
 
     return (
         <>
@@ -303,7 +464,7 @@ const DetalleRegistroPivote = ({
                 <form style={style.form}>
                     {rows.map((row, idx) => (
                         <RenderRowPivote
-                            key={row.id}
+                            key={row.id || idx}
                             index={idx}
                             row={row}
                             clientes={listadoClientes}
@@ -311,6 +472,7 @@ const DetalleRegistroPivote = ({
                             actividades={listadoActividades}
                             handleRowChange={handleRowChange}
                             handleRemoveRow={handleRemoveRow}
+                            errors={fieldErrors[idx] || {}} // <-- errores solo para ese renglón
                             usuarioSesion={usuarioSesion}
                         />
                     ))}
@@ -329,59 +491,61 @@ const DetalleRegistroPivote = ({
                     {/* ...botones de acción...
                         sección de botones (Cancelar, Limpiar, Guardar) 
                     */}
-                    <Grid2
-                        container
-                        spacing={0}
-                        sx={{ marginTop: 2 }}
-                        justifyContent="flex-end"
-                        alignItems="center"
-                    >
-                        <Grid2>
-                            <Button
-                                type="button"
-                                variant="contained"
-                                color="error"
-                                size="medium"
-                                disabled={btnDisabled}
-                                sx={{ mx: 2 }}
-                                //onClick={handleOpenDialogCancelar}
-                                style={style.submit}
-                                startIcon={<Cancel />}
-                            >
-                                Cancelar
-                            </Button>
+                    {rows.length > 0 && (
+                        <Grid2
+                            container
+                            spacing={0}
+                            sx={{ marginTop: 2 }}
+                            justifyContent="flex-end"
+                            alignItems="center"
+                        >
+                            <Grid2>
+                                <Button
+                                    type="button"
+                                    variant="contained"
+                                    color="error"
+                                    size="medium"
+                                    disabled={btnDisabled}
+                                    sx={{ mx: 2 }}
+                                    onClick={handleCancelar}
+                                    style={style.submit}
+                                    startIcon={<Cancel />}
+                                >
+                                    Cancelar
+                                </Button>
+                            </Grid2>
+                            <Grid2>
+                                <Button
+                                    type="button"
+                                    variant="contained"
+                                    color="secondary"
+                                    size="medium"
+                                    disabled={btnDisabled}
+                                    sx={{ mx: 2 }}
+                                    onClick={handleLimpiar}
+                                    style={style.submit}
+                                    startIcon={<ClearAll />}
+                                >
+                                    Limpiar
+                                </Button>
+                            </Grid2>
+                            <Grid2>
+                                <Button
+                                    type="button"
+                                    variant="contained"
+                                    color="primary"
+                                    size="medium"
+                                    disabled={btnDisabled}
+                                    sx={{ mx: 2 }}
+                                    style={style.submit}
+                                    onClick={handleGuardarRegistros}
+                                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                                >
+                                    {loading ? "Guardando..." : "Guardar"}
+                                </Button>
+                            </Grid2>
                         </Grid2>
-                        <Grid2>
-                            <Button
-                                type="button"
-                                variant="contained"
-                                color="secondary"
-                                size="medium"
-                                disabled={btnDisabled}
-                                sx={{ mx: 2 }}
-                                //onClick={handleLimpiarFormulario}
-                                style={style.submit}
-                                startIcon={<ClearAll />}
-                            >
-                                Limpiar
-                            </Button>
-                        </Grid2>
-                        <Grid2>
-                            <Button
-                                type="button"
-                                variant="contained"
-                                color="primary"
-                                size="medium"
-                                disabled={btnDisabled}
-                                sx={{ mx: 2 }}
-                                style={style.submit}
-                                onClick={handleGuardarRegistros}
-                                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                            >
-                                {loading ? "Guardando..." : "Guardar"}
-                            </Button>
-                        </Grid2>
-                    </Grid2>
+                    )}
                     <Divider sx={{ my: 2 }} />
 
                 </form>
@@ -395,7 +559,7 @@ const DetalleRegistroPivote = ({
                             ? (
                                 registosFromAPI.map((item, index) => (
                                     <Grid2 key={index} size={{ xs: 12, md: 6 }} sx={{ mb: 2 }}>
-                                        <PivoteItemGuardados data={item} />
+                                        <PivoteItemGuardados data={item} onClick={handleClickEditarRegistro} />
                                     </Grid2>
                                 ))
                             )
@@ -405,6 +569,41 @@ const DetalleRegistroPivote = ({
                     }
                 </Grid2>
             )}
+
+            {/* Dialog para confirmar la CANCELACIÓN o LIMPIAR */}
+            <ConfirmDialog
+                open={openConfirm}
+                title={
+                    accionConfirm === "limpiar"
+                        ? "¿Está seguro de que desea limpiar la captura?"
+                        : accionConfirm === "abandonar"
+                            ? "¿Está seguro de que desea abandonar la captura?"
+                            : "¿Está seguro de que desea cancelar?"
+                }
+                content={
+                    accionConfirm === "limpiar"
+                        ? "Se eliminarán todos los datos capturados y se dejará solo un renglón vacío."
+                        : accionConfirm === "abandonar"
+                            ? "Se perderán los cambios no guardados."
+                            : "Se perderán los cambios no guardados."
+                }
+                onClose={handleCloseConfirm}
+                onConfirm={handleConfirmCancel}
+                width={accionConfirm === "limpiar" || accionConfirm === "abandonar"
+                    ? "570px" : ""
+                }
+                height={accionConfirm === "limpiar" || accionConfirm === "abandonar"
+                    ? "220px" : ""
+                }
+            />
+
+            <DialogEditarRegistroPivote
+                open={openDialogEditar}
+                onClose={handleCloseDialogEditar}
+                data={registroSeleccionado}
+                onGuardar={handleGuardarCambiosRegistro}
+            />
+
         </>
     )
 }

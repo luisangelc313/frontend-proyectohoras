@@ -17,7 +17,9 @@ const RenderRowPivote = ({
     actividades,
     handleRowChange,
     handleRemoveRow,
-    usuarioSesion }) => {
+    usuarioSesion,
+    errors = {},
+}) => {
 
     const maxHoras = Number(usuarioSesion?.usuarioConfig?.horasPermitidasPorDia) || 0;
     const horasPermitidas = Array.from({ length: maxHoras }, (_, i) => ({
@@ -70,6 +72,8 @@ const RenderRowPivote = ({
                                     size="small"
                                     required
                                     variant="outlined"
+                                    error={errors.cliente}
+                                    helperText={errors.cliente ? "Requerido" : ""}
                                 />
                             )}
                             noOptionsText="Sin resultados"
@@ -120,6 +124,8 @@ const RenderRowPivote = ({
                                     size="small"
                                     required
                                     variant="outlined"
+                                    error={errors.solucion}
+                                    helperText={errors.solucion ? "Requerido" : ""}
                                 />
                             )}
                             noOptionsText="Sin resultados"
@@ -161,6 +167,8 @@ const RenderRowPivote = ({
                         minRows={1}
                         maxRows={1}
                         value={row.proyecto || ""}
+                        error={errors.proyecto}
+                        helperText={errors.proyecto ? "Requerido" : ""}
                         onChange={e => handleRowChange(index, "proyecto", e.target.value)}
                         slotProps={{
                             htmlInput: { maxLength: maxLengthProyecto },
@@ -211,6 +219,8 @@ const RenderRowPivote = ({
                                     size="small"
                                     required
                                     variant="outlined"
+                                    error={errors.actividad}
+                                    helperText={errors.actividad ? "Requerido" : ""}
                                 />
                             )}
                             noOptionsText="Sin resultados"
@@ -250,6 +260,8 @@ const RenderRowPivote = ({
                                     size="small"
                                     required
                                     variant="outlined"
+                                    error={errors.horas}
+                                    helperText={errors.horas ? "Requerido" : ""}
                                     slotProps={{
                                         //htmlInput: { maxLength: 2 },
                                     }}

@@ -7,16 +7,18 @@ import {
 } from "@mui/material";
 
 
-const PivoteItemGuardados = ({ data }) => {
-    console.log("PivoteItemGuardados data:", data);
+const PivoteItemGuardados = ({ data, onClick }) => {
+    //console.log("PivoteItemGuardados data:", data);
     return (
         <Card sx={{ maxWidth: "100%" }}>
-            <CardActionArea>
+            <CardActionArea onClick={() => onClick(data)}>
                 <CardMedia
                     component="img"
                     height="140"
                     image={`/static/images/clientes/${data.cliente?.clienteId || "default"}.png`}
                     //image='https://trello-backgrounds.s3.amazonaws.com/SharedBackground/2560x1791/7829a9074a720b15d4eae9e8172e22e5/photo-1518897316719-ca8cefb87965.webp'
+                    //image='https://b2bnegocios.net/wp-content/uploads/2025/04/b2b-negocios.svg'
+                    //image={`/static/images/clientes/b2b-negocios.svg`}
                     alt="logo cliente"
                 />
                 <CardContent>

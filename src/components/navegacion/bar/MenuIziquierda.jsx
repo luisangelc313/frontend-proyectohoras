@@ -18,6 +18,7 @@ import AddAlarm from '@mui/icons-material/AddAlarm';
 import Timeline from '@mui/icons-material/Timeline';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import PersonIcon from '@mui/icons-material/Person';
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 //import { ExpandLess, ExpandMore } from '@mui/icons-material';
 
 import { PathsUrl } from '../../../utils/Paths';
@@ -51,6 +52,7 @@ export const MenuIzquierda = ({ clases }) => {
         catalogos: hasPermission("com.modulo.catalogos"),
         usuarios: hasPermission("com.modulo.usuarios"),
         registroTiempos: hasPermission("com.modulo.registrotiempos"),
+        reportes: hasPermission("com.modulo.reportes"),
       });
     };
 
@@ -172,6 +174,43 @@ export const MenuIzquierda = ({ clases }) => {
               primary="Pivote"
             />
           </ListItem>
+        )}
+        <Divider />
+        {permissions.reportes && (
+          <List>
+            <ListItemButton onClick={handleCatalogosClick}>
+              <ListItemIcon style={{ color: '#551A8B', minWidth: '35px' }}>
+                <AssessmentOutlinedIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="Reportes"
+                style={{ color: '#551A8B' }}
+              />
+              {open ? <ExpandLess style={{ color: '#551A8B' }} /> : <ExpandMore style={{ color: '#551A8B' }} />}
+            </ListItemButton>
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {hasPermission("com.modulo.reportes", "com.funcion.rptregistro") && (
+                  <ListItem component={Link} to={PathsUrl.ReporteRegistros}>
+                    <ArrowRight style={{ marginLeft: '20px' }} />
+                    <ListItemText
+                      classes={{ primary: clases.listItemText }}
+                      primary="Registros"
+                    />
+                  </ListItem>
+                )}
+                {hasPermission("com.modulo.reportes", "com.funcion.rptpivote") && (
+                  <ListItem component={Link} to={PathsUrl.ReportePivote}>
+                    <i className="material-icons" style={{ marginLeft: '20px' }}>arrow_right</i>
+                    <ListItemText
+                      classes={{ primary: clases.listItemText }}
+                      primary="Pivote"
+                    />
+                  </ListItem>
+                )}
+              </List>
+            </Collapse>
+          </List>
         )}
       </List>
     </div>

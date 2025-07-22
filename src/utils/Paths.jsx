@@ -26,4 +26,7 @@ export const PathsUrl = {
   RegistroTiempos: "/registro/tasklog",
   RegistroDetalle: "/registro/detalle",
   RegistroPivote: "/registro/pivote",
+
+  ReporteRegistros: "/reporte/registros",
+  ReportePivote: "/reporte/pivote",
 };
