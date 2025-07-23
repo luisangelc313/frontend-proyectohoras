@@ -602,6 +602,7 @@ const DetalleRegistroPivote = ({
                 onClose={handleCloseDialogEditar}
                 data={registroSeleccionado}
                 onGuardar={handleGuardarCambiosRegistro}
+                usuarioSesion={usuarioSesion}
             />
 
         </>
