@@ -1,19 +1,21 @@
+import { useEffect } from "react";
 import {
     Autocomplete,
     Button,
-    Dialog, DialogActions, DialogContent, DialogTitle,
+    Dialog, DialogActions, DialogContent, DialogTitle, Divider,
     FormControl,
     Grid2,
     Typography, TextField,
-    Divider,
 } from "@mui/material";
+import { useState } from "react";
 
 const DialogEditarRegistroPivote = ({
     open,
     onClose,
     data,
     onGuardar,
-    usuarioSesion
+    usuarioSesion,
+    dataSource,
 }) => {
 
     const maxLengthProyecto = 1000;
@@ -22,6 +24,24 @@ const DialogEditarRegistroPivote = ({
         id: i + 1,
         nombre: String(i + 1)
     }));
+
+    //console.info("DialogEditarRegistroPivote data:", data);
+
+    // Maneja el cambio de datos en los campos del formulario
+    const handleRowChange = (field, value) => {
+        setRegistroEditado(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+
+    const [registroEditado, setRegistroEditado] = useState(data || {});
+    useEffect(() => {
+        setRegistroEditado(data || {});
+    }, [data]);
+
+
 
     return (
         <Dialog
@@ -39,16 +59,15 @@ const DialogEditarRegistroPivote = ({
                             {/*CLIENTE */}
                             <Grid2 size={{ xs: 12, md: 12 }}>
                                 <FormControl variant="outlined" size="small" fullWidth required>
-                                    {/* <InputLabel id={`cliente-label${index}`}>Cliente</InputLabel> */}
 
                                     <Autocomplete
-                                        //options={clientes}
+                                        options={dataSource.clientes}
                                         getOptionLabel={option => option.nombre || ""}
                                         isOptionEqualToValue={(option, value) => option.clienteId === value.clienteId}
-                                        //value={clientes.find(c => c.clienteId === row.cliente) || null}
-                                        // onChange={(_, newValue) =>
-                                        //     handleRowChange(index, "cliente", newValue ? newValue.clienteId : "")
-                                        // }
+                                        value={dataSource.clientes.find(c => c.clienteId === registroEditado.clienteId) || null}
+                                        onChange={(_, newValue) =>
+                                            handleRowChange("clienteId", newValue ? newValue.clienteId : "")
+                                        }
                                         renderOption={(props, option, { index }) => (
                                             <li {...props} key={`${option.clienteId}-${index}`}>
                                                 {option.nombre}
@@ -74,16 +93,15 @@ const DialogEditarRegistroPivote = ({
                             {/* SOLUCIÓN */}
                             <Grid2 size={{ xs: 12, md: 12 }}>
                                 <FormControl variant="outlined" size="small" fullWidth required>
-                                    {/* <InputLabel id={`solucion-label${index}`}>Solución</InputLabel> */}
 
                                     <Autocomplete
-                                        //options={soluciones}
+                                        options={dataSource.soluciones}
                                         getOptionLabel={option => option.nombre || ""}
                                         isOptionEqualToValue={(option, value) => option.solucionId === value.solucionId}
-                                        //value={soluciones.find(c => c.solucionId === row.solucion) || null}
-                                        // onChange={(_, newValue) =>
-                                        //     handleRowChange(index, "solucion", newValue ? newValue.solucionId : "")
-                                        // }
+                                        value={dataSource.soluciones.find(c => c.solucionId === registroEditado.solucionId) || null}
+                                        onChange={(_, newValue) =>
+                                            handleRowChange("solucionId", newValue ? newValue.solucionId : "")
+                                        }
                                         renderOption={(props, option, { index }) => (
                                             <li {...props} key={`${option.solucionId}-${index}`}>
                                                 {option.nombre}
@@ -138,10 +156,10 @@ const DialogEditarRegistroPivote = ({
                                         multiline
                                         minRows={1}
                                         maxRows={1}
-                                        value={data?.proyecto || ""}
-                                    //error={errors.proyecto}
-                                    //helperText={errors.proyecto ? "Requerido" : ""}
-                                    //onChange={e => handleRowChange(index, "proyecto", e.target.value)}
+                                        value={registroEditado.proyecto || ""}
+                                        //error={errors.proyecto}
+                                        //helperText={errors.proyecto ? "Requerido" : ""}
+                                        onChange={e => handleRowChange("proyecto", e.target.value)}
                                     // slotProps={{
                                     //     htmlInput: { maxLength: maxLengthProyecto },
                                     //     style: { overflowY: 'hidden' }
@@ -155,16 +173,15 @@ const DialogEditarRegistroPivote = ({
                                 {/* ACTIVIDAD */}
                                 <Grid2 size={{ xs: 12, md: 8 }}>
                                     <FormControl variant="outlined" size="small" fullWidth required>
-                                        {/* <InputLabel id={`actividad-label${index}`}>Actividad</InputLabel> */}
 
                                         <Autocomplete
-                                            //options={actividades}
+                                            options={dataSource.actividades}
                                             getOptionLabel={option => option.nombre || ""}
                                             isOptionEqualToValue={(option, value) => option.actividadId === value.actividadId}
-                                            //value={actividades.find(c => c.actividadId === row.actividad) || null}
-                                            // onChange={(_, newValue) =>
-                                            //     handleRowChange(index, "actividad", newValue ? newValue.actividadId : "")
-                                            // }
+                                            value={dataSource.actividades.find(c => c.actividadId === registroEditado.actividadId) || null}
+                                            onChange={(_, newValue) =>
+                                                handleRowChange("actividadId", newValue ? newValue.actividadId : "")
+                                            }
                                             renderOption={(props, option, { index }) => (
                                                 <li {...props} key={`${option.actividadId}-${index}`}>
                                                     {option.nombre}
@@ -200,10 +217,10 @@ const DialogEditarRegistroPivote = ({
                                             options={horasPermitidas}
                                             getOptionLabel={option => option.nombre}
                                             isOptionEqualToValue={(option, value) => option.id === value.id}
-                                            value={horasPermitidas.find(h => h.id === data?.horas) || null}
-                                            // onChange={(_, newValue) =>
-                                            //     handleRowChange(index, "horas", newValue ? newValue.id : "")
-                                            // }
+                                            value={horasPermitidas.find(h => h.id === registroEditado.horas) || null}
+                                            onChange={(_, newValue) =>
+                                                handleRowChange("horas", newValue ? newValue.id : "")
+                                            }
                                             renderOption={(props, option) => (
                                                 <li {...props} key={option.id}>
                                                     {option.nombre}
@@ -243,7 +260,7 @@ const DialogEditarRegistroPivote = ({
                 <Button onClick={onClose} color="error" variant="outlined">
                     Cancelar
                 </Button>
-                <Button onClick={() => onGuardar(data)} color="primary" variant="contained">
+                <Button onClick={() => onGuardar(registroEditado)} color="primary" variant="contained">
                     Guardar
                 </Button>
             </DialogActions>

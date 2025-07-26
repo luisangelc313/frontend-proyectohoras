@@ -131,7 +131,6 @@ const DetalleRegistroPivote = ({
     }, [fecha, rows.length]);
 
 
-
     const handleClickAggNuevoRenglon = e => {
         e.preventDefault();
 
@@ -407,8 +406,20 @@ const DetalleRegistroPivote = ({
     };
 
     const handleGuardarCambiosRegistro = (registroEditado) => {
-        console.log("Guardar cambios de:", registroEditado);
-        // Aquí implementa la lógica para guardar cambios en el backend
+        const payload = {
+            registroPivoteId: registroEditado.registroPivoteId,
+            usuarioId: usuarioSesion.usuarioId || "",
+            clienteId: registroEditado.clienteId,
+            solucionId: registroEditado.solucionId,
+            proyecto: registroEditado.proyecto,
+            actividadId: registroEditado.actividadId,
+            horas: registroEditado.horas,
+            notas: registroEditado.notas || null,
+        };
+        console.log("Payload editar:", payload);
+        //return;
+
+        // Cierra el diálogo
         handleCloseDialogEditar();
     };
 
@@ -603,6 +614,11 @@ const DetalleRegistroPivote = ({
                 data={registroSeleccionado}
                 onGuardar={handleGuardarCambiosRegistro}
                 usuarioSesion={usuarioSesion}
+                dataSource={{
+                    clientes: listadoClientes,
+                    soluciones: listadoSoluciones,
+                    actividades: listadoActividades
+                }}
             />
 
         </>
