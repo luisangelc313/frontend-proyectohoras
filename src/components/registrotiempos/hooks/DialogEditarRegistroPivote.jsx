@@ -33,21 +33,43 @@ const DialogEditarRegistroPivote = ({
             ...prev,
             [field]: value
         }));
+
+        setErrores(prev => ({
+            ...prev,
+            [field]: null
+        }));
     };
 
 
+    const [errores, setErrores] = useState({});
     const [registroEditado, setRegistroEditado] = useState(data || {});
+
     useEffect(() => {
         setRegistroEditado(data || {});
+        setErrores({}); // Reinicia errores al recibir nuevos datos
     }, [data]);
 
+    const validarCampos = () => {
+        const nuevosErrores = {};
+
+        if (!registroEditado.clienteId) nuevosErrores.clienteId = "Requerido";
+        if (!registroEditado.solucionId) nuevosErrores.solucionId = "Requerido";
+        if (!registroEditado.proyecto || registroEditado.proyecto.trim() === "")
+            nuevosErrores.proyecto = "Requerido";
+        if (!registroEditado.actividadId) nuevosErrores.actividadId = "Requerido";
+        if (!registroEditado.horas) nuevosErrores.horas = "Requerido";
+
+        setErrores(nuevosErrores);
+
+        return Object.keys(nuevosErrores).length === 0;
+    };
 
 
     return (
         <Dialog
             open={open}
             onClose={onClose}
-            sx={{ "& .MuiDialog-paper": { width: "600px", height: "470px", px: 2, my: 2 } }}>
+            sx={{ "& .MuiDialog-paper": { width: "600px", height: "500px", px: 2, my: 2 } }}>
 
             <DialogTitle>Editar Registro</DialogTitle>
             <Divider sx={{ my: 1 }} />
@@ -80,8 +102,8 @@ const DialogEditarRegistroPivote = ({
                                                 size="small"
                                                 required
                                                 variant="outlined"
-                                            //error={errors.cliente}
-                                            //helperText={errors.cliente ? "Requerido" : ""}
+                                                error={Boolean(errores.clienteId)}
+                                                helperText={errores.clienteId || ""}
                                             />
                                         )}
                                         noOptionsText="Sin resultados"
@@ -114,8 +136,8 @@ const DialogEditarRegistroPivote = ({
                                                 size="small"
                                                 required
                                                 variant="outlined"
-                                            //error={errors.solucion}
-                                            //helperText={errors.solucion ? "Requerido" : ""}
+                                                error={Boolean(errores.solucionId)}
+                                                helperText={errores.solucionId || ""}
                                             />
                                         )}
                                         noOptionsText="Sin resultados"
@@ -157,8 +179,8 @@ const DialogEditarRegistroPivote = ({
                                         minRows={1}
                                         maxRows={1}
                                         value={registroEditado.proyecto || ""}
-                                        //error={errors.proyecto}
-                                        //helperText={errors.proyecto ? "Requerido" : ""}
+                                        error={Boolean(errores.proyecto)}
+                                        helperText={errores.proyecto || ""}
                                         onChange={e => handleRowChange("proyecto", e.target.value)}
                                     // slotProps={{
                                     //     htmlInput: { maxLength: maxLengthProyecto },
@@ -194,8 +216,8 @@ const DialogEditarRegistroPivote = ({
                                                     size="small"
                                                     required
                                                     variant="outlined"
-                                                //error={errors.actividad}
-                                                //helperText={errors.actividad ? "Requerido" : ""}
+                                                    error={Boolean(errores.actividadId)}
+                                                    helperText={errores.actividadId || ""}
                                                 />
                                             )}
                                             noOptionsText="Sin resultados"
@@ -233,8 +255,8 @@ const DialogEditarRegistroPivote = ({
                                                     size="small"
                                                     required
                                                     variant="outlined"
-                                                    //error={errors.horas}
-                                                    //helperText={errors.horas ? "Requerido" : ""}
+                                                    error={Boolean(errores.horas)}
+                                                    helperText={errores.horas || ""}
                                                     slotProps={{
                                                         //htmlInput: { maxLength: 2 },
                                                     }}
@@ -260,7 +282,12 @@ const DialogEditarRegistroPivote = ({
                 <Button onClick={onClose} color="error" variant="outlined">
                     Cancelar
                 </Button>
-                <Button onClick={() => onGuardar(registroEditado)} color="primary" variant="contained">
+                <Button onClick={() => {
+                    if (validarCampos())
+                        onGuardar(registroEditado)
+                }}
+                    color="primary"
+                    variant="contained">
                     Guardar
                 </Button>
             </DialogActions>

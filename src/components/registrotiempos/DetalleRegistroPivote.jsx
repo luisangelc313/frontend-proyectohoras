@@ -14,6 +14,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import Cancel from '@mui/icons-material/Cancel';
 import ClearAll from '@mui/icons-material/ClearAll';
 import SaveIcon from '@mui/icons-material/Save';
+import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 
 
 import style from "../Tool/style";
@@ -21,6 +22,7 @@ import RenderRowPivote from './RenderRowPivote';
 import { HttpStatus } from "../../utils/HttpStatus";
 import {
     guardarPivoteAction,
+    editarPivoteAction,
     obtenerRegPivFechaSeleccionadaAction
 } from "../../actions/PivoteAction";
 import {
@@ -405,8 +407,8 @@ const DetalleRegistroPivote = ({
         setRegistroSeleccionado(null);
     };
 
-    const handleGuardarCambiosRegistro = (registroEditado) => {
-        const payload = {
+    const handleGuardarCambiosModificados = async registroEditado => {
+        const myRequest = [{
             registroPivoteId: registroEditado.registroPivoteId,
             usuarioId: usuarioSesion.usuarioId || "",
             clienteId: registroEditado.clienteId,
@@ -415,14 +417,70 @@ const DetalleRegistroPivote = ({
             actividadId: registroEditado.actividadId,
             horas: registroEditado.horas,
             notas: registroEditado.notas || null,
-        };
-        console.log("Payload editar:", payload);
+        }];
+        //console.log("Payload editar:", myRequest);
         //return;
 
-        // Cierra el diálogo
-        handleCloseDialogEditar();
-    };
+        const msjError = "Ocurrió un error al guardar los cambios modificados.";
+        try {
 
+            const payload = {
+                registrosPivote: myRequest,
+            };
+
+            const response = await editarPivoteAction(payload, registroEditado.registroPivoteId);
+            let { status, statusText, data } = response;
+
+            if (status === HttpStatus.OK && statusText === "OK") {
+                if (data && data.length > 0) {
+                    //recorre los registros guardados y actualiza el estado de Total de Horas Capturadas
+                    const totalHoras = data.reduce((total, item) => total + (item.horas || 0), 0);
+                    setHorasCapturadas(totalHoras);
+
+                    // ACTUALIZA registosFromAPI directamente con data si tu API regresa los registros completos
+                    setRegistosFromAPI(data);
+                }
+
+                // Cierra el diálogo
+                handleCloseDialogEditar();
+
+                dispatch({
+                    type: "OPEN_SNACKBAR",
+                    openMensaje: {
+                        open: true,
+                        mensaje: "Información registrada correctamente.",
+                        severity: "success",
+                    },
+                });
+
+            } else {
+                dispatch({
+                    type: "OPEN_SNACKBAR",
+                    openMensaje: {
+                        open: true,
+                        mensaje: msjError,
+                        severity: "error",
+                        vertical: "bottom",
+                        horizontal: "left"
+                    },
+                });
+            }
+
+        } catch (error) {
+            const errorMessage = error?.data?.errors?.msg || msjError;
+
+            dispatch({
+                type: "OPEN_SNACKBAR",
+                openMensaje: {
+                    open: true,
+                    mensaje: errorMessage,
+                    severity: "error",
+                    vertical: "bottom",
+                    horizontal: "left"
+                },
+            });
+        }
+    };
 
 
     return (
@@ -575,7 +633,21 @@ const DetalleRegistroPivote = ({
                                 ))
                             )
                             : (
-                                <p>No hay registros capturados.</p>
+                                <Grid2
+                                    size={{ xs: 12, md: 12 }}
+                                    container
+                                    justifyContent="center"
+                                    alignItems="center"
+                                    sx={{
+                                        minHeight: "300px",
+                                        flexDirection: "column",
+                                        textAlign: "center",
+                                    }}>
+                                    <Typography variant="h6" align="center">
+                                        No hay registros capturados.
+                                    </Typography>
+                                    <SentimentVeryDissatisfiedIcon sx={{ color: "gray", fontSize: 22 }} />
+                                </Grid2>
                             )
                     }
                 </Grid2>
@@ -612,7 +684,7 @@ const DetalleRegistroPivote = ({
                 open={openDialogEditar}
                 onClose={handleCloseDialogEditar}
                 data={registroSeleccionado}
-                onGuardar={handleGuardarCambiosRegistro}
+                onGuardar={handleGuardarCambiosModificados}
                 usuarioSesion={usuarioSesion}
                 dataSource={{
                     clientes: listadoClientes,
