@@ -22,6 +22,9 @@ export const PathsUrl = {
   UsuarioCaptura: "/usuario/captura",
   UsuarioEditar: "/usuario/captura/:id",
   UsuarioCambiarPwd: "/usuario/cambiarpwd",
+  UsuarioRecuperarPwd: "/seguridad/recuperarpwd",
+
+  AuthLogin: "auth/login",
 
   RegistroTiempos: "/registro/tasklog",
   RegistroDetalle: "/registro/detalle",

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from "react-router-dom";
 import {
   Avatar,
   Box,
@@ -19,6 +20,7 @@ import style from "../Tool/style";
 import { HttpStatus } from "../../utils/HttpStatus";
 import { loginUsuario } from "../../actions/UsuarioAction";
 import { useStateValue } from "../../context/store";
+import { PathsUrl } from "../../utils/Paths";
 
 const Login = () => {
   const usernameRef = useRef(null);
@@ -216,7 +218,12 @@ const Login = () => {
                 },
               }}
             >
-              <Link href="#" underline="hover">
+              <Link
+                component={RouterLink}
+                to={PathsUrl.UsuarioRecuperarPwd}
+                underline="hover"
+                style={{ cursor: 'pointer' }}
+              >
                 {"¿Olvidaste tu contraseña?"}
               </Link>
             </Box>

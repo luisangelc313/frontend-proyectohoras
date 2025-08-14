@@ -22,6 +22,8 @@ import RouterApp from "./routes/RouterApp";
 import ProtectedRoutes from "./routes/ProtectedRoutes";
 import { AuthProvider } from "./context/AuthProvider"; // Importa el AuthProvider
 import { CambiarPwd } from "./components/seguridad";
+import { PathsUrl } from "./utils/Paths";
+import RecuperarPwd from "./components/seguridad/RecuperarPwd";
 
 function App() {
   const [theme, setTheme] = useState(getTheme());
@@ -121,6 +123,7 @@ function App() {
               <Routes>
                 <Route path="/auth/login" element={<Login />} />
                 <Route path="/auth/seguridadpwd" element={<CambiarPwd />} />
+                <Route path={PathsUrl.UsuarioRecuperarPwd} element={<RecuperarPwd />}></Route>
                 <Route
                   path="/*"
                   element={<ProtectedRoutes>{<RouterApp />}</ProtectedRoutes>}

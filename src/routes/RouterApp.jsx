@@ -15,6 +15,7 @@ import { ListadoClientes } from "../components/catclientes";
 import { ListadoSoluciones } from "../components/catsoluciones";
 import { ListadoPerfiles } from "../components/catperfiles";
 import { TaskLog, Pivote } from "../components/registrotiempos";
+import RecuperarPwd from '../components/seguridad/RecuperarPwd';
 
 
 const RouterApp = () => {
