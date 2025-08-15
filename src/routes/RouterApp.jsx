@@ -15,7 +15,7 @@ import { ListadoClientes } from "../components/catclientes";
 import { ListadoSoluciones } from "../components/catsoluciones";
 import { ListadoPerfiles } from "../components/catperfiles";
 import { TaskLog, Pivote } from "../components/registrotiempos";
-import RecuperarPwd from '../components/seguridad/RecuperarPwd';
+import { RptRegistros, RptPivote } from "../components/reports";
 
 
 const RouterApp = () => {
@@ -40,6 +40,10 @@ const RouterApp = () => {
 
         <Route path={PathsUrl.RegistroTiempos} element={<TaskLog />} />
         <Route path={PathsUrl.RegistroPivote} element={<Pivote />} />
+
+        <Route path={PathsUrl.ReporteRegistros} element={<RptRegistros />} />
+        <Route path={PathsUrl.ReportePivote} element={<RptPivote />} />
+
       </Routes>
     </>
   );
