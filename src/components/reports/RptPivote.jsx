@@ -1,7 +1,13 @@
+import { Typography } from "@mui/material";
+import style from "../Tool/style";
 
 const RptPivote = () => {
     return (
-        <div>Reporte Pivote</div>
+        <div style={style.table}>
+            <Typography component="h1" variant="h5">
+                Reporte de Registros Pivote
+            </Typography>
+        </div>
     )
 }
 
