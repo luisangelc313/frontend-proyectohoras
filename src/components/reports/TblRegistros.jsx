@@ -54,7 +54,7 @@ const TblRegistros = ({
                                     <TableCell>{row.mes}</TableCell>
                                     <TableCell>{row.cliente}</TableCell>
                                     <TableCell>{row.solucion}</TableCell>
-                                    <TableCell>{row.proyecto}</TableCell>
+                                    <TableCell>{row.descripcion}</TableCell>
                                     <TableCell>{row.actividad}</TableCell>
                                     <TableCell align="right">{row.horas}</TableCell>
                                     <TableCell
@@ -89,7 +89,7 @@ const TblRegistros = ({
                                             fontFamily: "Arial",
                                             captionSide: "bottom"
                                         }}>
-                                        Sin Registros
+                                        Sin datos para mostrar
                                     </span>
                                 </TableCell>
                             </TableRow>

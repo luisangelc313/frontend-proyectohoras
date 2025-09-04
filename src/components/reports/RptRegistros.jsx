@@ -31,7 +31,10 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import style from "../Tool/style";
 import { useStateValue } from "../../context/store";
-import { obtenerDatosFiltrosAction } from "../../actions/ReportesAction";
+import {
+    obtenerDatosFiltrosAction,
+    obtenerReporteRegistroAction
+} from "../../actions/ReportesAction";
 import TblRegistros from "./TblRegistros";
 
 
@@ -87,26 +90,113 @@ const RptRegistros = () => {
         [actividades, payload.actividadId]
     );
 
+
+    const validarCamposRequeridos = data => {
+        if (!data.fechaInicio && !data.fechaFin) {
+            dispatch({
+                type: "OPEN_SNACKBAR",
+                openMensaje: {
+                    open: true,
+                    mensaje: "Seleccione rango de fechas (Inicio y Fin).",
+                    severity: "warning",
+                    vertical: "bottom",
+                    horizontal: "right"
+                },
+            });
+            return false;
+        }
+
+        return true;
+    };
+
+    //const [registros, setRegistros] = useState([]); // Estado para los registros
+    //const [totalRegistros, setTotalRegistros] = useState(0); // Total de registros para la paginación
+
     const handleBuscar = async () => {
+        const paginaVariant = paginadorRequest.numeroPagina + 1;
+
         // Si quieres normalizar antes de enviar
         const requestPayload = {
             ...payload,
-            proyecto: (payload.proyecto || "").trim(),
             usuarioId: usuarioSesion.usuarioId,
+            numeroPagina: paginaVariant,
+            cantidadElementos: paginadorRequest.cantidadElementos,
+            descripcion: (payload.proyecto || "").trim(),
+            solucionId: payload.solucionId || null,
+            clienteId: payload.clienteId || null,
+            actividadId: payload.actividadId || null,
+            fechaInicio: payload.fechaInicio || "",
+            fechaFin: payload.fechaFin || "",
         };
-        console.log("Payload listo para API:", requestPayload);
+        //console.log("Payload listo para API:", requestPayload);
         // await buscarRegistros(requestPayload)
+        //return;
+
+        if (!validarCamposRequeridos(requestPayload)) {
+            return false;
+        }
+
+        const msjError = "Ocurrió un error al obtener el reporte.";
+
+        try {
+            const response = await obtenerReporteRegistroAction(requestPayload);
+            if (response && response.data && response.status === 200) {
+                //console.log("Respuesta de la API:", response.data);
+                // Aquí puedes manejar la respuesta, por ejemplo, actualizar el estado con los datos recibidos
+                //setRegistros(response.data.listaRecords || []); // Actualiza los registros
+                //setTotalRegistros(response.data.totalRecords || 0); // Actualiza el total de registros
+                setPaginadorResponse(response.data);
+
+            } else {
+                console.error("Ocurrió un error al obtener el reporte:", response);
+            }
+        }
+        catch (error) {
+            const errorMessage = error?.data?.errors?.msg || msjError;
+            dispatch({
+                type: "OPEN_SNACKBAR",
+                openMensaje: {
+                    open: true,
+                    mensaje: errorMessage,
+                    severity: "error",
+                    vertical: "bottom",
+                    horizontal: "left"
+                },
+            });
+        }
+        finally {
+            console.info("Finalizado");
+        }
     };
 
     const handleLimpiar = () => setPayload(initialPayload);
 
+
+    const [paginadorRequest, setPaginadorRequest] = useState({
+        titulo: "",
+        numeroPagina: 0,
+        cantidadElementos: 10,
+    });
+
+    const [paginadorResponse, setPaginadorResponse] = useState({
+        listaRecords: [],
+        totalRecords: 0,
+        numeroPaginas: 0,
+    });
+
     const handlePageChange = (event, nuevaPagina) => {
-        console.log("Página cambiada a:", nuevaPagina);
+        setPaginadorRequest((anterior) => ({
+            ...anterior,
+            numeroPagina: parseInt(nuevaPagina),
+        }));
     }
 
     const handleRowsPerPageChange = (event) => {
-        const nuevasFilasPorPagina = parseInt(event.target.value, 10);
-        console.log("Filas por página cambiadas a:", nuevasFilasPorPagina);
+        setPaginadorRequest((anterior) => ({
+            ...anterior,
+            cantidadElementos: parseInt(event.target.value),
+            numeroPagina: 0,
+        }));
     }
 
     const [expanded, setExpanded] = useState(false); // Estado para controlar el accordion
@@ -380,10 +470,10 @@ const RptRegistros = () => {
 
             <Grid2 container spacing={1} sx={{ mt: 4 }}>
                 <TblRegistros
-                    registros={[]}
-                    count={0}
-                    rowsPerPage={10}
-                    page={0}
+                    registros={paginadorResponse.listaRecords} // Pasa los registros obtenidos
+                    count={paginadorResponse.totalRecords} // Pasa el total de registros para la paginación
+                    rowsPerPage={paginadorRequest.cantidadElementos}
+                    page={paginadorRequest.numeroPagina}
                     handlePageChange={handlePageChange}
                     handleRowsPerPageChange={handleRowsPerPageChange}
                 />

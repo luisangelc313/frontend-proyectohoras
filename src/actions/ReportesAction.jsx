@@ -15,3 +15,15 @@ export const obtenerDatosFiltrosAction = () => {
             .catch((error) => reject(error.response));
     });
 };
+
+
+export const obtenerReporteRegistroAction = data => {
+    return new Promise((resolve, reject) => {
+        HttpCliente.post(`reportes/reporteregistros`, data)
+            .then((response) => {
+                resolve(response);
+            })
+            .catch((error) => reject(error.response));
+    });
+};
+
