@@ -17,6 +17,7 @@ import {
     AccordionSummary,
     Autocomplete,
     Backdrop,
+    Box,
     Button,
     CircularProgress,
     Grid2,
@@ -56,6 +57,7 @@ const RptRegistros = () => {
 
     const [{ sesionUsuario }, dispatch] = useStateValue();
     const [usuarioSesion, setUsuarioSesion] = useState({});
+
 
     // Variables para almacenar los datos de la API
     const [clientes, setClientes] = useState([]);
@@ -109,9 +111,6 @@ const RptRegistros = () => {
         return true;
     };
 
-    //const [registros, setRegistros] = useState([]); // Estado para los registros
-    //const [totalRegistros, setTotalRegistros] = useState(0); // Total de registros para la paginación
-
     const handleBuscar = async () => {
         const paginaVariant = paginadorRequest.numeroPagina + 1;
 
@@ -129,7 +128,6 @@ const RptRegistros = () => {
             fechaFin: payload.fechaFin || "",
         };
         //console.log("Payload listo para API:", requestPayload);
-        // await buscarRegistros(requestPayload)
         //return;
 
         if (!validarCamposRequeridos(requestPayload)) {
@@ -142,9 +140,6 @@ const RptRegistros = () => {
             const response = await obtenerReporteRegistroAction(requestPayload);
             if (response && response.data && response.status === 200) {
                 //console.log("Respuesta de la API:", response.data);
-                // Aquí puedes manejar la respuesta, por ejemplo, actualizar el estado con los datos recibidos
-                //setRegistros(response.data.listaRecords || []); // Actualiza los registros
-                //setTotalRegistros(response.data.totalRecords || 0); // Actualiza el total de registros
                 setPaginadorResponse(response.data);
 
             } else {
@@ -194,7 +189,7 @@ const RptRegistros = () => {
     const handleRowsPerPageChange = (event) => {
         setPaginadorRequest((anterior) => ({
             ...anterior,
-            cantidadElementos: parseInt(event.target.value),
+            cantidadElementos: parseInt(event.target.value, 10), // Actualiza el número de filas por página
             numeroPagina: 0,
         }));
     }
@@ -247,13 +242,134 @@ const RptRegistros = () => {
                 setLoading(false);
             }
         };
-
         obtenerDatosFiltros();
+
         setUsuarioSesion(sesionUsuario.usuario);
 
         initialPayload.usuarioId = sesionUsuario.usuario.usuarioId;
 
     }, [dispatch, sesionUsuario.usuario]);
+
+    useEffect(() => {
+        const fechaInicioMesActual = dayjs().startOf("month").format("YYYY-MM-DD");//Obtener el inicio del mes actual
+        const fechaFinMesActual = dayjs().endOf("day").format("YYYY-MM-DD");//Obtener el fin del día actual
+
+        // Actualiza el payload con las fechas del mes actual
+        setPayload((prev) => ({
+            ...prev,
+            fechaInicio: fechaInicioMesActual,
+            fechaFin: fechaFinMesActual,
+        }));
+
+        const obtenerRegistrosMesActual = async () => {
+            setLoading(true);
+
+            const requestPayload = {
+                ...payload,
+                usuarioId: sesionUsuario.usuario.usuarioId,
+                fechaInicio: fechaInicioMesActual,
+                fechaFin: fechaFinMesActual,
+                numeroPagina: 1,
+                cantidadElementos: paginadorRequest.cantidadElementos,
+                descripcion: "",
+                solucionId: null,
+                clienteId: null,
+                actividadId: null,
+            };
+
+            try {
+                const response = await obtenerReporteRegistroAction(requestPayload);
+                if (response && response.data && response.status === 200) {
+                    setPaginadorResponse(response.data); // Actualiza los registros
+                    console.info("API RESPONSE:", response);
+                } else {
+                    dispatch({
+                        type: "OPEN_SNACKBAR",
+                        openMensaje: {
+                            open: true,
+                            mensaje: "Ocurrió un error al obtener los registros del mes actual.",
+                            severity: "error",
+                        },
+                    });
+                }
+            } catch (error) {
+                const errorMessage = error?.response?.data?.errors?.msg || "Error al obtener los registros del mes actual.";
+                dispatch({
+                    type: "OPEN_SNACKBAR",
+                    openMensaje: {
+                        open: true,
+                        mensaje: errorMessage,
+                        severity: "error",
+                    },
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        obtenerRegistrosMesActual();
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dispatch, sesionUsuario.usuario.usuarioId, paginadorRequest.cantidadElementos]);
+
+    const [isFirstLoad, setIsFirstLoad] = useState(true); // Bandera para controlar la primera carga
+
+    useEffect(() => {
+        const obtenerRegistrosPorPagina = async () => {
+            setLoading(true);
+
+            const requestPayload = {
+                ...payload,
+                usuarioId: sesionUsuario.usuario.usuarioId,
+                numeroPagina: paginadorRequest.numeroPagina + 1, // La API espera páginas 1-indexadas
+                cantidadElementos: paginadorRequest.cantidadElementos,
+                descripcion: (payload.proyecto || "").trim(),
+                solucionId: payload.solucionId || null,
+                clienteId: payload.clienteId || null,
+                actividadId: payload.actividadId || null,
+                fechaInicio: payload.fechaInicio || "",
+                fechaFin: payload.fechaFin || "",
+            };
+
+            try {
+                const response = await obtenerReporteRegistroAction(requestPayload);
+                if (response && response.data && response.status === 200) {
+                    setPaginadorResponse(response.data); // Actualiza los registros
+                } else {
+                    dispatch({
+                        type: "OPEN_SNACKBAR",
+                        openMensaje: {
+                            open: true,
+                            mensaje: "Ocurrió un error al obtener los registros.",
+                            severity: "error",
+                        },
+                    });
+                }
+            } catch (error) {
+                const errorMessage = error?.response?.data?.errors?.msg || "Error al obtener los registros.";
+                dispatch({
+                    type: "OPEN_SNACKBAR",
+                    openMensaje: {
+                        open: true,
+                        mensaje: errorMessage,
+                        severity: "error",
+                    },
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // Evita la llamada inicial
+        if (isFirstLoad) {
+            setIsFirstLoad(false); // Cambia la bandera después de la primera carga
+            return;
+        }
+
+        obtenerRegistrosPorPagina();
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paginadorRequest, usuarioSesion.usuarioId, dispatch]);
 
 
     return (
@@ -268,6 +384,40 @@ const RptRegistros = () => {
             <Typography component="h1" variant="h5">
                 Reporte de Registros de Horas Por Proyecto
             </Typography>
+
+            <Box display="flex" alignItems="center" gap={2} sx={{
+                borderColor: '#e7e2e2ff',
+                borderWidth: 1,
+                borderStyle: 'solid',
+                borderRadius: '1px',
+                px: 3,
+                py: 0.5,
+                mt: 2,
+                width: "32%", // Asegura que el contenedor ocupe el ancho completo
+            }}>
+                <Typography variant="h6" gutterBottom>
+                    <span
+                        style={{
+                            fontSize: 14,
+                            fontWeight: "500",
+                            fontFamily: "Arial",
+                            captionSide: "bottom",
+                            marginRight: 5,
+                        }}>Usuario: </span>
+                    {usuarioSesion && usuarioSesion.username}
+                </Typography>
+                <Typography variant="h6" gutterBottom sx={{ mt: 0 }}>
+                    <span
+                        style={{
+                            fontSize: 14,
+                            fontWeight: "500",
+                            fontFamily: "Arial",
+                            captionSide: "bottom",
+                            marginRight: 5,
+                        }}>Total Horas: </span>
+                    {paginadorResponse.valorAdicional || 0}
+                </Typography>
+            </Box>
 
             <Grid2 container style={style.tableGridContainer} sx={{
                 borderColor: '#e7e2e2ff',
@@ -347,7 +497,9 @@ const RptRegistros = () => {
                                             value={payload.fechaFin ? dayjs(payload.fechaFin) : null}
                                             minDate={payload.fechaInicio ? dayjs(payload.fechaInicio) : dayjs("2000-01-01")}
                                             maxDate={dayjs()}
-                                            onChange={(newValue) => setField("fechaFin", newValue ? dayjs(newValue).format("YYYY-MM-DD") : "")}
+                                            onChange={(newValue) =>
+                                                setField("fechaFin", newValue ? dayjs(newValue).format("YYYY-MM-DD") : "")
+                                            }
                                             slotProps={{
                                                 textField: {
                                                     size: "small",

@@ -5,6 +5,7 @@ import {
     TableBody,
     TableCell,
     TableContainer,
+    TableFooter,
     TableHead,
     TablePagination,
     TableRow
@@ -62,7 +63,7 @@ const TblRegistros = ({
                                             width: 50,
                                             minWidth: 60,
                                             maxWidth: 80,
-                                            p: 0.4,
+                                            py: 1.5,
                                             position: 'relative',
                                             '& .acciones-botones': {
                                                 opacity: 0,
@@ -74,6 +75,7 @@ const TblRegistros = ({
                                         }}
                                     >
                                         <Box className="acciones-botones" sx={{ display: "flex" }}>
+                                            {/* Action buttons can be placed here */}
                                             TEXT
                                         </Box>
                                     </TableCell>
@@ -95,6 +97,27 @@ const TblRegistros = ({
                             </TableRow>
                         )}
                     </TableBody>
+                    <TableFooter>
+                        <TableRow sx={{ backgroundColor: "#d6daddff" }}>
+                            {/* colspan hasta la columna Horas - 1 */}
+                            <TableCell colSpan={headers.length - 2} />
+                            <TableCell
+                                align="right"
+                                sx={{ fontWeight: "bold", color: "#000", backgroundColor: "#f5f5f5", py: 1 }}
+                            >
+                                Total:
+                            </TableCell>
+                            <TableCell
+                                align="left"
+                                sx={{ fontWeight: "bold", color: "#000", backgroundColor: "#f5f5f5" }}
+                            >
+                                {registros.reduce((acc, row) => acc + Number(row.horas || 0), 0)}
+                            </TableCell>
+                            <TableCell>
+                                {/* Columna acciones vacía */}
+                            </TableCell>
+                        </TableRow>
+                    </TableFooter>
                 </Table>
             </TableContainer>
             <Box sx={{ width: "100%", display: "flex", justifyContent: "flex-end" }}>
